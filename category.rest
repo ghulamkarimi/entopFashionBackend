@@ -1,0 +1,28 @@
+#### all caregories
+GET http://localhost:7004/api/category/allCategory
+Content-Type: application/json
+
+#### create category
+POST http://localhost:7004/api/category/createCategory
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2ZlNDNhMmMyYWNiZjExMjMzZGNmZjkiLCJmaXJzdE5hbWUiOiJHaHVsYW0iLCJsYXN0TmFtZSI6IkthcmltaSIsImVtYWlsIjoia2FyaW1pQGdtYWlsLmNvbSIsImlzQWRtaW4iOnRydWUsImlhdCI6MTc0NDc4MjAyMCwiZXhwIjoxNzQ0NzgyOTIwfQ.Q3vLaBXHpCzX7Wz3mbrXM-U4umwtbk2ll4yCjjOs5iY
+
+{
+  "name": "string",
+  "description": "string",
+  "image": "string",
+  "gender" : "Männlich"
+}
+
+#### update category
+PUT http://localhost:7004/api/category/67ff31b739e72a7edd3662ed
+Content-Type: application/json
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2ZlNDNhMmMyYWNiZjExMjMzZGNmZjkiLCJmaXJzdE5hbWUiOiJHaHVsYW0iLCJsYXN0TmFtZSI6IkthcmltaSIsImVtYWlsIjoia2FyaW1pQGdtYWlsLmNvbSIsImlzQWRtaW4iOnRydWUsImlhdCI6MTc0NDc3NzgyMywiZXhwIjoxNzQ0Nzc4NzIzfQ.nnaxeur_cGWX06Bhjp6vc8_qrW5Gct6k3ovGoGwZPfE
+
+{
+  "name": "Jacke",
+  "description": "string",
+  "image": "string",
+  "gender" : "Männlich"
+}
+

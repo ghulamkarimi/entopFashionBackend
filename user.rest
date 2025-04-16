@@ -1,0 +1,38 @@
+#### register user
+POST http://localhost:7004/api/user/register
+Content-Type: application/json
+
+{
+    "firstName": "Ghulam",
+    "lastName": "Karimi",
+    "email": "karimi@gmail.com",
+    "password": "testuser.123",
+    "confirmPassword": "testuser.123" 
+}
+
+#### login user
+POST http://localhost:7004/api/user/login
+Content-Type: application/json
+
+{
+    "email": "karimi@gmail.com",
+    "password": "testuser.123"
+}
+
+### Me abrufen
+GET http://localhost:7004/api/user/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2ZmNDc4MGY4NWZhNjQxNTZlNmEzYzAiLCJmaXJzdE5hbWUiOiJHaHVsYW0iLCJsYXN0TmFtZSI6IkthcmltaSIsImVtYWlsIjoia2FyaW1pQGdtYWlsLmNvbSIsImlzQWRtaW4iOmZhbHNlLCJpYXQiOjE3NDQ3OTE4NzgsImV4cCI6MTc0NDc5Mjc3OH0.ffcVMHkurfNiH1vFa4mA9lE5zC8-CseiJe43qCZRM_M
+
+### Refresh Token testen
+POST http://localhost:7004/api/user/refresh-token
+Cookie: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2ZmNDc4MGY4NWZhNjQxNTZlNmEzYzAiLCJmaXJzdE5hbWUiOiJHaHVsYW0iLCJsYXN0TmFtZSI6IkthcmltaSIsImVtYWlsIjoia2FyaW1pQGdtYWlsLmNvbSIsImlzQWRtaW4iOmZhbHNlLCJpYXQiOjE3NDQ3OTA2MTgsImV4cCI6MTc0NDc5MTUxOH0.S5usm8nRFKYF1GisgAOE_DZs1N4TaQwTJCHyaFwKmf0
+
+
+
+#### user logout
+DELETE http://localhost:7004/api/user/logout
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2ZmNDc4MGY4NWZhNjQxNTZlNmEzYzAiLCJlbWFpbCI6ImthcmltaUBnbWFpbC5jb20iLCJmaXJzdE5hbWUiOiJHaHVsYW0iLCJsYXN0TmFtZSI6IkthcmltaSIsImlzQWRtaW4iOmZhbHNlLCJpYXQiOjE3NDQ3ODM1NjcsImV4cCI6MTc0NDc4NDQ2N30.iLJ28-kLAIsuNXfqS0vd4AumwuILrWvoDbX8NXmrGNw
+
+#### get users
+GET http://localhost:7004/api/user/all
+Content-Type: application/json
