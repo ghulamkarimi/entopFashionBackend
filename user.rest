@@ -3,11 +3,11 @@ POST http://localhost:7004/api/user/register
 Content-Type: application/json
 
 {
-    "firstName": "Ghulam",
-    "lastName": "Karimi",
-    "email": "karimi@gmail.com",
-    "password": "testuser.123",
-    "confirmPassword": "testuser.123" 
+    "firstName": "Reza",
+    "lastName": "Rahimi",
+    "email": "rahimi.901719@gmail.com",
+    "password": "Asra.2020!",
+    "confirmPassword": "Asra.2020!"
 }
 
 #### login user
@@ -15,17 +15,39 @@ POST http://localhost:7004/api/user/login
 Content-Type: application/json
 
 {
-    "email": "karimi@gmail.com",
-    "password": "testuser.123"
+    "email": "rahimi.901719@gmail.com",
+    "password": "Asra.2020!"
 }
+
 
 ### Me abrufen
 GET http://localhost:7004/api/user/me
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2ZmNDc4MGY4NWZhNjQxNTZlNmEzYzAiLCJmaXJzdE5hbWUiOiJHaHVsYW0iLCJsYXN0TmFtZSI6IkthcmltaSIsImVtYWlsIjoia2FyaW1pQGdtYWlsLmNvbSIsImlzQWRtaW4iOmZhbHNlLCJpYXQiOjE3NDQ3OTE4NzgsImV4cCI6MTc0NDc5Mjc3OH0.ffcVMHkurfNiH1vFa4mA9lE5zC8-CseiJe43qCZRM_M
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODFhMGU1NTVjMmQ3MDg3NGIzYWIwMzAiLCJmaXJzdE5hbWUiOiJHaHVsYW0iLCJsYXN0TmFtZSI6IkthcmltaSIsImVtYWlsIjoicmFoaW1pLjkwMTcxOUBnbWFpbC5jb20iLCJpc0FkbWluIjpmYWxzZSwiaWF0IjoxNzQ2NjA0NzEzLCJleHAiOjE3NDY2MDU2MTN9.id4YYh9H0iofohJK13SdGCX9SHMzxg7hqkZD9nvm6nc
 
 ### Refresh Token testen
 POST http://localhost:7004/api/user/refresh-token
-Cookie: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2ZmNDc4MGY4NWZhNjQxNTZlNmEzYzAiLCJmaXJzdE5hbWUiOiJHaHVsYW0iLCJsYXN0TmFtZSI6IkthcmltaSIsImVtYWlsIjoia2FyaW1pQGdtYWlsLmNvbSIsImlzQWRtaW4iOmZhbHNlLCJpYXQiOjE3NDQ3OTA2MTgsImV4cCI6MTc0NDc5MTUxOH0.S5usm8nRFKYF1GisgAOE_DZs1N4TaQwTJCHyaFwKmf0
+Cookie: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2ZmNDc4MGY4NWZhNjQxNTZlNmEzYzAiLCJmaXJzdE5hbWUiOiJHaHVsYW0iLCJsYXN0TmFtZSI6IkthcmltaSIsImVtYWlsIjoia2FyaW1pQGdtYWlsLmNvbSIsImlzQWRtaW4iOnRydWUsImlhdCI6MTc0NjUzNjExOSwiZXhwIjoxNzQ2NTM3MDE5fQ.woJlpZLOhdLWYdDaEyG1NnSE8mG7xrqaJcB6dUdWObg
+
+
+### edit user
+PUT http://localhost:7004/api/user/edit
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODFiNDY5YTNhZWUxOWY3ZTUzY2UxMjkiLCJmaXJzdE5hbWUiOiJSZXphIiwibGFzdE5hbWUiOiJSYWhpbWkiLCJlbWFpbCI6InJhaGltaS45MDE3MTlAZ21haWwuY29tIiwiaXNBZG1pbiI6ZmFsc2UsImlhdCI6MTc0NzcyOTk5MiwiZXhwIjoxNzQ3NzMwODkyfQ.MTGRLMgaCpfjTD4zLQflP8yuaYnYmD6P47ihENdxAW8
+
+{
+  "firstName": "Reza",
+  "lastName": "Rahimi",
+  "defaultAddress": {
+    "fullName": "Reza Rahimi",
+    "houseNumber": "54",
+    "street": "Brückes",
+    "city": "Bad Kreuznach",
+    "zip": "55545",
+    "country": "Deutschland",
+    "phone": "+49 1707407417"
+  }
+}
+
 
 
 

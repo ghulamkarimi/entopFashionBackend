@@ -5,13 +5,13 @@ Content-Type: application/json
 #### create category
 POST http://localhost:7004/api/category/createCategory
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2ZlNDNhMmMyYWNiZjExMjMzZGNmZjkiLCJmaXJzdE5hbWUiOiJHaHVsYW0iLCJsYXN0TmFtZSI6IkthcmltaSIsImVtYWlsIjoia2FyaW1pQGdtYWlsLmNvbSIsImlzQWRtaW4iOnRydWUsImlhdCI6MTc0NDc4MjAyMCwiZXhwIjoxNzQ0NzgyOTIwfQ.Q3vLaBXHpCzX7Wz3mbrXM-U4umwtbk2ll4yCjjOs5iY
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2ZmNDc4MGY4NWZhNjQxNTZlNmEzYzAiLCJmaXJzdE5hbWUiOiJHaHVsYW0iLCJsYXN0TmFtZSI6IkthcmltaSIsImVtYWlsIjoia2FyaW1pQGdtYWlsLmNvbSIsImlzQWRtaW4iOmZhbHNlLCJpYXQiOjE3NDU5ODg1NTEsImV4cCI6MTc0NTk4OTQ1MX0.vFDvhuJZzg-2f3gkP2Tmp_RHWsXKdVItzMW7lrugKp4
 
 {
   "name": "string",
   "description": "string",
   "image": "string",
-  "gender" : "Männlich"
+  "gender" : "Kinder"
 }
 
 #### update category

@@ -5,6 +5,8 @@ import { IUserRegisterRequest } from "../interface";
 import asynchandler from "express-async-handler";
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import { sendEmail } from "../utils/sendEmail";
+ 
 
 
 export const generateCustomerNumber = async (firstName: string, lastName: string) => {
@@ -105,7 +107,7 @@ export const loginUser = asynchandler(async (req: Request, res: Response) => {
   const refreshToken = jwt.sign(
     { userId, firstName, lastName, email, isAdmin },
     process.env.REFRESHTOKEN,
-    { expiresIn: "7d" }
+    { expiresIn: "1d" }
   );
 
   // RefreshToken in der DB speichern
@@ -124,12 +126,18 @@ export const loginUser = asynchandler(async (req: Request, res: Response) => {
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 Tage
+    maxAge:  24 * 60 * 60 * 1000, // 1 Tag
     sameSite: "lax",
   });
 
   const decodedAccessToken = jwt.decode(accessToken);
-
+  let expDate: string | undefined;
+  if (typeof decodedAccessToken === 'object' && decodedAccessToken?.exp) {
+    expDate = new Date(decodedAccessToken.exp * 1000).toLocaleString("de-DE", {
+      timeZone: "Europe/Berlin",
+    });
+  }
+  
   res.status(200).json({
     message: "User logged in successfully",
     userInfo: decodedAccessToken,
@@ -142,6 +150,7 @@ export const loginUser = asynchandler(async (req: Request, res: Response) => {
       exp: typeof decodedAccessToken === "object" && "exp" in decodedAccessToken
         ? decodedAccessToken.exp
         : undefined,
+      expReadable: expDate,
     }
   });
 });
@@ -222,6 +231,82 @@ export const checkAccessToken = asynchandler(async (req: Request, res: Response)
   } catch (error) {
     res.status(401).json({ message: "Token ungültig oder abgelaufen" });
   }
+});
+
+ 
+
+export const editUser = asynchandler(async (req: Request, res: Response) => {
+  if (!req.user) {
+    res.status(401).json({ message: "Nicht authentifiziert" });
+    return;
+  }
+
+  const { firstName, lastName, email, defaultAddress } = req.body;
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    res.status(404).json({ message: "Benutzer nicht gefunden" });
+    return;
+  }
+
+  if (firstName) user.firstName = firstName;
+  if (lastName) user.lastName = lastName;
+
+  if (email && email !== user.email) {
+    const emailExists = await User.findOne({ email });
+    if (emailExists) {
+      res.status(400).json({ message: "E-Mail wird bereits verwendet" });
+      return;
+    }
+    user.email = email;
+  }
+
+  let adresseGeändert = false;
+
+  if (defaultAddress) {
+    const { street,houseNumber, city, zip, country, phone } = defaultAddress;
+    if ( !street || !houseNumber|| !city || !zip || !country || !phone) {
+      res.status(400).json({ message: "Unvollständige Adressdaten" });
+      return;
+    }
+
+    const alteAdresse = JSON.stringify(user.defaultAddress || {});
+    const neueAdresse = JSON.stringify(defaultAddress);
+
+    if (alteAdresse !== neueAdresse) {
+      adresseGeändert = true;
+    }
+
+    user.defaultAddress = { ...defaultAddress };
+  }
+
+  const updatedUser = await user.save();
+
+  if (adresseGeändert) {
+    await sendEmail({
+      to: user.email,
+      subject: "Ihre Adresse wurde geändert",
+      text: `Hallo ${user.firstName},\n\nIhre Standardadresse wurde geändert.\nFalls Sie diese Änderung nicht selbst vorgenommen haben, kontaktieren Sie bitte sofort unser Team.\n\nIhr EntopFashion-Team`,
+      html: `
+        <h2>Hallo ${user.firstName},</h2>
+        <p>Ihre Standardadresse wurde geändert.</p>
+        <p>Falls Sie diese Änderung nicht selbst vorgenommen haben, kontaktieren Sie bitte sofort unser Team.</p>
+        <br/>
+        <strong>Ihr EntopFashion-Team</strong>
+      `,
+    });
+  }
+
+  res.status(200).json({
+    message: "Benutzerdaten erfolgreich aktualisiert",
+    user: {
+      id: updatedUser._id,
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+      email: updatedUser.email,
+      defaultAddress: updatedUser.defaultAddress,
+    },
+  });
 });
 
 

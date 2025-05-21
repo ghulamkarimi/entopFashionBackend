@@ -7,6 +7,14 @@ export interface IUser {
     password: string;
     phone: string;
     isGuest: boolean;
+    defaultAddress?: {
+      fullName: string;
+      street: string;
+      city: string;
+      zip: string;
+      country: string;
+      phone: string;
+    };
     isVerified: boolean;
     customerNumber: string;
     isAdmin: boolean;
@@ -25,7 +33,9 @@ export interface IUser {
 
 export interface ICategory extends Document {
   name: string;
+  gender: GenderType;
   description: string;
   image: string;
-  gender: GenderType;
 }
+
+ 

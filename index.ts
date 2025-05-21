@@ -6,6 +6,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import categoryRouter from "./routers/categoryRouter";
 import orderRouter from "./routers/orderRouter";
+import genderRouter from "./routers/genderRouter";
 
 
 dotenv.config();
@@ -23,6 +24,8 @@ app.use(cors({
 app.use("/api/user",userRouter)
 app.use("/api/category",categoryRouter)
 app.use("/api/order",orderRouter)
+app.use("/api/genders", genderRouter)
+
 
 const PORT = process.env.PORT || 3000
 app.listen(PORT , ()=>{

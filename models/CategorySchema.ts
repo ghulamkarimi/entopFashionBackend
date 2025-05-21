@@ -11,7 +11,7 @@ const CategorySchema: Schema = new Schema(
     gender: {
       type: String,
       enum: genderValues,
-      required: true,
+      required: false,
     },
   },
   { timestamps: true }
