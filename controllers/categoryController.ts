@@ -12,13 +12,11 @@ export const createCategory = asynchandler(async (req: Request, res: Response): 
         }
 
         // 2. Daten aus dem Request holen
-        const { name, description, image, gender } = req.body;
+        const { name, gender } = req.body;
 
         // 3. Neue Kategorie anlegen
         const newCategory = new Category({
             name,
-            description,
-            image,
             gender
             // Optional: createdBy: req.user.userId
         });
@@ -62,7 +60,7 @@ export const deleteCategory = asynchandler(async (req: Request, res: Response): 
         return;
       }
   
-      const { name, description, image, gender } = req.body;
+      const { name, gender } = req.body;
       const category = await Category.findById(req.params.id);
   
       if (!category) {
@@ -71,8 +69,6 @@ export const deleteCategory = asynchandler(async (req: Request, res: Response): 
       }
   
       category.name = name || category.name;
-      category.description = description || category.description;
-      category.image = image || category.image;
       category.gender= gender || category.gender
   
       await category.save();

@@ -7,30 +7,31 @@ import cookieParser from "cookie-parser";
 import categoryRouter from "./routers/categoryRouter";
 import orderRouter from "./routers/orderRouter";
 import genderRouter from "./routers/genderRouter";
-
+import productRouter from "./routers/productRouter";
+import newsletterRouter from "./routers/newsletterRouter";
 
 dotenv.config();
-dbConnect()
+dbConnect();
 
-const app = express()
+const app = express();
 
-app.use(express.json())
+app.use(express.json());
 app.use(cookieParser());
-app.use(cors({
-    origin: "http://localhost:3000", // ersetze mit deinem echten Frontend
+app.use(
+  cors({
+    origin: "http://localhost:3000",
     credentials: true,
-  }));
-  
-app.use("/api/user",userRouter)
-app.use("/api/category",categoryRouter)
-app.use("/api/order",orderRouter)
-app.use("/api/genders", genderRouter)
+  })
+);
 
+app.use("/api/user", userRouter);
+app.use("/api/category", categoryRouter);
+app.use("/api/order", orderRouter);
+app.use("/api/genders", genderRouter);
+app.use("/api/products", productRouter);
+app.use("/api/newsletter", newsletterRouter);
 
-const PORT = process.env.PORT || 3000
-app.listen(PORT , ()=>{
-    console.log(`Server is running on port ${PORT}`)
-})
-
-
-
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});

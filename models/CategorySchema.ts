@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import { ICategory } from "../interface";
 import { genderValues } from "../gender";
 
@@ -6,8 +6,6 @@ import { genderValues } from "../gender";
 const CategorySchema: Schema = new Schema(
   {
     name: { type: String, required: true, trim: true },
-    description: { type: String, required: true, trim: true },
-    image: { type: String, required: true },
     gender: {
       type: String,
       enum: genderValues,

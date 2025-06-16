@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { GenderType } from "../gender";
 
 export interface IUser {
@@ -34,8 +35,27 @@ export interface IUser {
 export interface ICategory extends Document {
   name: string;
   gender: GenderType;
-  description: string;
-  image: string;
 }
 
+export interface IColorOption {
+  name: string;
+  code: string;
+}
+
+export interface IProduct extends Document {
+  name: String;
+  description: String;
+  price: Number;
+  image?:String[];
+  category: String | mongoose.Types.ObjectId;
+  stock: Number;
+  colors: IColorOption[];
+  weight: Number;
+  createdAt: Date;
+}
  
+export interface INewsletter extends Document {
+  email: string;
+  subscribed: boolean;
+  timeStamp: Date;
+}
