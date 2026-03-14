@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { GenderType } from "../gender";
 
 export interface IUser {
+     _id?: mongoose.Types.ObjectId;
     firstName: string;
     lastName: string;
     email: string;
@@ -11,6 +12,7 @@ export interface IUser {
     defaultAddress?: {
       fullName: string;
       street: string;
+      houseNumber: string;
       city: string;
       zip: string;
       country: string;
@@ -19,6 +21,7 @@ export interface IUser {
     isVerified: boolean;
     customerNumber: string;
     isAdmin: boolean;
+    owner: boolean;
     accessToken?: string;
     refreshToken?: string;
   }
@@ -39,7 +42,8 @@ export interface ICategory extends Document {
 
 export interface IColorOption {
   name: string;
-  code: string;
+  hexCode: string;
+  _id: mongoose.Types.ObjectId;
 }
 
 export interface IProduct extends Document {
@@ -49,7 +53,17 @@ export interface IProduct extends Document {
   image?:String[];
   category: String | mongoose.Types.ObjectId;
   stock: Number;
-  colors: IColorOption[];
+  colors: (IColorOption | mongoose.Types.ObjectId)[];
+  sizes?: String[];
+  brand?: String; 
+  sku?: String;
+  newPrice?: Number;
+  isFeatured?: Boolean;
+  discount?: Number;
+  deliveryTime?: String;
+  tags?: String[];
+  material?: String;
+  originCountry?: String;
   weight: Number;
   createdAt: Date;
 }
@@ -59,3 +73,41 @@ export interface INewsletter extends Document {
   subscribed: boolean;
   timeStamp: Date;
 }
+
+export type SafeUser = {
+  _id: string;
+  firstName?: string;
+  lastName?: string;
+  email: string;
+  phone: string;
+  address?: any;
+  defaultAddress?: IUser["defaultAddress"];
+  isAdmin: boolean;
+  customerNumber?: string;
+  owner?: boolean;
+  isAccountVerified?: boolean;
+};
+
+export type SafeUserBasic = Pick<
+  IUser,
+  | "firstName"
+  | "lastName"
+  | "email"
+  | "phone"
+  | "defaultAddress"
+  | "isAdmin"
+  | "customerNumber"
+  | "owner"
+> & { _id: string };
+
+export type AuthUser = {
+  _id?: unknown;
+  userId?: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  isAdmin?: boolean;
+  customerNumber?: string;
+  owner?: boolean;
+  defaultAddress?: IUser["defaultAddress"];
+};

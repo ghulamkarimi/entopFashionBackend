@@ -1,17 +1,20 @@
 #### create category
 POST http://localhost:7004/api/products
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODFiNDY5YTNhZWUxOWY3ZTUzY2UxMjkiLCJmaXJzdE5hbWUiOiJSZXphIiwibGFzdE5hbWUiOiJSYWhpbWkiLCJlbWFpbCI6InJhaGltaS45MDE3MTlAZ21haWwuY29tIiwiaXNBZG1pbiI6dHJ1ZSwiaWF0IjoxNzQ4ODU5NTc4LCJleHAiOjE3NDg4NjA0Nzh9.AEH7T_RL24pPNDf_EWZLX3cfIFIu0Z03GDugJe32xSA
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OTk0YmMzZTQ5ZDIzYTBhZjgzOWI3MjQiLCJmaXJzdE5hbWUiOiJSZXphIiwibGFzdE5hbWUiOiJSYWhpbWkiLCJlbWFpbCI6InJhaGltaS45MDE3MTlAZ21haWwuY29tIiwiaXNBZG1pbiI6dHJ1ZSwiY3VzdG9tZXJOdW1iZXIiOiJSUjYzMTEiLCJvd25lciI6dHJ1ZSwiZGVmYXVsdEFkZHJlc3MiOnt9LCJpYXQiOjE3NzEzNTczOTAsImV4cCI6MTc3MTM1ODI5MH0.tLPobjdznOadNIviyrV6O3DnoiqC9mkNCk9mfm_C4N4
 
 {
   "name": "Winterjacke",
   "description": "Warme Jacke für den Winter",
   "price": 99.99,
-  "image": "",
+  "image": "default-image.jpg",
   "category": "682dac0c1e5d8b655255ca0f",
   "stock": 50,
-  "colors": ["Schwarz", "Blau"],
-  "weight": 1.5
+  "colors": [
+  { "name": "Schwarz", "hexCode": "#000000" },
+  { "name": "Blau", "hexCode": "#0000FF" }
+],
+"weight": 1.5
 }
 
 #### get all products
@@ -19,9 +22,9 @@ GET http://localhost:7004/api/products
 Content-Type: application/json
 
 #### delete product
-DELETE http://localhost:7004/api/products/683d977f35061f47aa8efe65
+DELETE http://localhost:7004/api/products/6852cc7722130fdd2d92b155
 Content-Type: application/json
-Authorization : Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODFiNDY5YTNhZWUxOWY3ZTUzY2UxMjkiLCJmaXJzdE5hbWUiOiJSZXphIiwibGFzdE5hbWUiOiJSYWhpbWkiLCJlbWFpbCI6InJhaGltaS45MDE3MTlAZ21haWwuY29tIiwiaXNBZG1pbiI6dHJ1ZSwiaWF0IjoxNzQ4ODY3MDE1LCJleHAiOjE3NDg4Njc5MTV9.p15nPSu-P9QBRgHar6BvNZgT-b_06KvjK9ne7_POejk
+Authorization : Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODFiNDY5YTNhZWUxOWY3ZTUzY2UxMjkiLCJmaXJzdE5hbWUiOiJSZXphIiwibGFzdE5hbWUiOiJSYWhpbWkiLCJlbWFpbCI6InJhaGltaS45MDE3MTlAZ21haWwuY29tIiwiaXNBZG1pbiI6dHJ1ZSwiaWF0IjoxNzUwMjU2MTkyLCJleHAiOjE3NTAyNTcwOTJ9.5oZFZP8brLCYDg6Z9WxNgjEbZAaIOE2OrDJamGqCnIg
 
 #### update product
 PUT http://localhost:7004/api/products/683d977f35061f47aa8efe65

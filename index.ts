@@ -9,11 +9,18 @@ import orderRouter from "./routers/orderRouter";
 import genderRouter from "./routers/genderRouter";
 import productRouter from "./routers/productRouter";
 import newsletterRouter from "./routers/newsletterRouter";
+import colorRouter from "./routers/colorRouter";
+import adminRouter from "./routers/adminRouter";
+import dns from "node:dns";
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
+
 
 dotenv.config();
-dbConnect();
 
-const app = express();
+const startServer = async () => {
+  await dbConnect();
+
+  const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
@@ -25,13 +32,18 @@ app.use(
 );
 
 app.use("/api/user", userRouter);
+app.use("/api/admin", adminRouter);
 app.use("/api/category", categoryRouter);
 app.use("/api/order", orderRouter);
 app.use("/api/genders", genderRouter);
 app.use("/api/products", productRouter);
+app.use("/api/color",colorRouter);
 app.use("/api/newsletter", newsletterRouter);
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+  const PORT = process.env.PORT || 7004;
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+};
+
+startServer();

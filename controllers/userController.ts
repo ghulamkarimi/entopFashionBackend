@@ -1,82 +1,122 @@
-
 import { User } from "../models/userSchema";
-import { IUser } from "../interface";
-import { IUserRegisterRequest } from "../interface";
 import asynchandler from "express-async-handler";
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { sendEmail } from "../utils/sendEmail";
- 
+import type {
+  IUser,
+  IUserRegisterRequest,
+  SafeUser,
+  AuthUser,
+  SafeUserBasic,
+} from "../interface";
 
-
-export const generateCustomerNumber = async (firstName: string, lastName: string) => {
-    let isUnique = false;
-    let customerNumber: IUser["customerNumber"] = "";
-
-    const firstInitial = firstName.charAt(0).toUpperCase();
-    const lastInitial = lastName.charAt(0).toUpperCase();
-
-    while (!isUnique) {
-        const randomNum = Math.floor(1000 + Math.random() * 9000).toString();
-        customerNumber = `${firstInitial}${lastInitial}${randomNum}`;
-        const existUser = await User.findOne({ customerNumber });
-        if (!existUser) isUnique = true;
+// Augment Express Request (damit TS req.user kennt)
+declare global {
+  namespace Express {
+    interface Request {
+      user?: AuthUser;
     }
+  }
+}
 
-    return customerNumber;
+// Helper: robustes _id -> string
+const toIdString = (id: unknown): string => {
+  if (!id) return "";
+  if (typeof id === "string") return id;
+  // mongoose ObjectId hat meist toString()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const anyId = id as any;
+  if (typeof anyId?.toString === "function") return anyId.toString();
+  return String(id);
 };
 
-export const userRegister = asynchandler(async (req: Request<{}, {}, IUserRegisterRequest>, res: Response) => {
-    const { firstName, lastName, email, password, confirmPassword} = req.body;
-    try {
-        const userExist = await User.findOne({ email });
-        if (userExist) {
-            res.status(400).json({ message: "Ein Konto mit dieser E-Mail existiert" });
-            return;
-        }
-        if (password !== confirmPassword) {
-          res
-            .status(400)
-            .json({ message: "Passwörter stimmen nicht überein." });
-          return;
-        }
-        const customerNumber = await generateCustomerNumber(firstName, lastName);
-        const user = new User({
-            firstName,
-            lastName,
-            email,
-            password,
-            customerNumber,
-            isGuest: false,
-            isAdmin: false,
-            isVerified: false,
-        });
-        await user.save();
-        res.status(201).json({
-            message: "Benutzer wurde erfolgreich erstellt.",
-            user: {
-                id: user._id,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                email: user.email,
-                customerNumber: user.customerNumber,
-                isVerified: user.isVerified,
-                isGuest: user.isGuest,
-            }
-        });
+export const generateCustomerNumber = async (
+  firstName: string,
+  lastName: string,
+) => {
+  let isUnique = false;
+  let customerNumber: IUser["customerNumber"] = "";
 
-    } catch (error: any) {
-      console.error("❌ Fehler bei der Registrierung:", error); // <- Konsole zeigt den echten Fehler
+  const firstInitial = firstName.charAt(0).toUpperCase();
+  const lastInitial = lastName.charAt(0).toUpperCase();
+
+  while (!isUnique) {
+    const randomNum = Math.floor(1000 + Math.random() * 9000).toString();
+    customerNumber = `${firstInitial}${lastInitial}${randomNum}`;
+    const existUser = await User.findOne({ customerNumber });
+    if (!existUser) isUnique = true;
+  }
+
+  return customerNumber;
+};
+
+export const userRegister = asynchandler(
+  async (req: Request<{}, {}, IUserRegisterRequest>, res: Response) => {
+    const { firstName, lastName, email, password, confirmPassword } = req.body;
+
+    try {
+      const userExist = await User.findOne({ email });
+      if (userExist) {
+        res
+          .status(400)
+          .json({ message: "Ein Konto mit dieser E-Mail existiert" });
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        res.status(400).json({ message: "Passwörter stimmen nicht überein." });
+        return;
+      }
+
+      const customerNumber = await generateCustomerNumber(firstName, lastName);
+
+      const user = new User({
+        firstName,
+        lastName,
+        email,
+        password,
+        customerNumber,
+        isGuest: false,
+        owner: false,
+        isAdmin: false,
+        isVerified: false,
+      });
+
+      await user.save();
+
+      res.status(201).json({
+        message: "Benutzer wurde erfolgreich erstellt.",
+        user: {
+          id: toIdString(user._id),
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          owner: user.owner,
+          isAdmin: user.isAdmin,
+          phone: user.phone,
+          defaultAddress: user.defaultAddress,
+          customerNumber: user.customerNumber,
+          isVerified: user.isVerified,
+          isGuest: user.isGuest,
+        },
+      });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      console.error("Fehler bei der Registrierung:", error);
       res.status(500).json({
         message: "Interner Serverfehler",
-        error: error.message,
+        error: err?.message ?? "Unknown error",
       });
     }
-    
-});
+  },
+);
 
 export const loginUser = asynchandler(async (req: Request, res: Response) => {
-  const { email: userEmail, password } = req.body;
+  const { email: userEmail, password } = req.body as {
+    email: string;
+    password: string;
+  };
 
   const userFound = await User.findOne({ email: userEmail });
   if (!userFound) {
@@ -90,75 +130,103 @@ export const loginUser = asynchandler(async (req: Request, res: Response) => {
     return;
   }
 
+  const userId = toIdString(userFound._id);
+
   const {
-    _id: userId,
     email,
     isAdmin,
     firstName,
     lastName,
+    customerNumber,
+    owner,
+    defaultAddress,
   } = userFound;
 
+  /**
+   * WICHTIG: Bitte ENV-Namen konsistent machen.
+   * Empfehlung: ACCESS_TOKEN und REFRESH_TOKEN in .env nutzen.
+   */
+  const accessSecret = process.env.ACCESS_TOKEN 
+  const refreshSecret = process.env.REFRESH_TOKEN 
+
+  if (!accessSecret || !refreshSecret) {
+    res.status(500).json({
+      message: "Token-Secret fehlt in ENV (ACCESS_TOKEN/REFRESH_TOKEN).",
+    });
+    return;
+  }
+
   const accessToken = jwt.sign(
-    { userId, firstName, lastName, email, isAdmin },
-    process.env.ACCESSTOKEN,
-    { expiresIn: "15m" }
+    {
+      userId,
+      firstName,
+      lastName,
+      email,
+      isAdmin,
+      customerNumber,
+      owner,
+      defaultAddress,
+    },
+    accessSecret,
+    { expiresIn: "15m" },
   );
 
   const refreshToken = jwt.sign(
     { userId, firstName, lastName, email, isAdmin },
-    process.env.REFRESHTOKEN,
-    { expiresIn: "1d" }
+    refreshSecret,
+    { expiresIn: "1d" },
   );
 
-  // RefreshToken in der DB speichern
-  await User.findByIdAndUpdate(userId, {
-    refreshToken
-  });
+  await User.findByIdAndUpdate(userId, { refreshToken });
 
-  // Cookies setzen
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    maxAge: 15 * 60 * 1000, // 15 Min
+    maxAge: 15 * 60 * 1000,
     sameSite: "lax",
   });
 
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    maxAge:  24 * 60 * 60 * 1000, // 1 Tag
+    maxAge: 24 * 60 * 60 * 1000,
     sameSite: "lax",
   });
 
-  const decodedAccessToken = jwt.decode(accessToken);
+  const decodedAccessToken = jwt.decode(accessToken) as { exp?: number } | null;
+
   let expDate: string | undefined;
-  if (typeof decodedAccessToken === 'object' && decodedAccessToken?.exp) {
+  if (decodedAccessToken?.exp) {
     expDate = new Date(decodedAccessToken.exp * 1000).toLocaleString("de-DE", {
       timeZone: "Europe/Berlin",
     });
   }
-  
+
+  const safeUser: SafeUserBasic = {
+    _id: userId,
+    firstName,
+    lastName,
+    email,
+    phone: userFound.phone,
+    defaultAddress: userFound.defaultAddress,
+    isAdmin,
+    customerNumber: userFound.customerNumber,
+    owner: userFound.owner,
+  };
+
   res.status(200).json({
     message: "User logged in successfully",
     userInfo: decodedAccessToken,
-    user: {
-      id: userId,
-      firstName,
-      lastName,
-      email,
-      isAdmin,
-      exp: typeof decodedAccessToken === "object" && "exp" in decodedAccessToken
-        ? decodedAccessToken.exp
-        : undefined,
+    user: safeUser,
+    tokenInfo: {
+      exp: decodedAccessToken?.exp,
       expReadable: expDate,
-    }
+    },
   });
 });
 
-
-
 export const userLogout = asynchandler(async (req: Request, res: Response) => {
-  const refreshToken = req.cookies.refreshToken;
+  const refreshToken = req.cookies?.refreshToken;
 
   if (!refreshToken) {
     res.status(400).json({ message: "No refresh token provided" });
@@ -174,7 +242,6 @@ export const userLogout = asynchandler(async (req: Request, res: Response) => {
   user.refreshToken = undefined;
   await user.save();
 
-  // Beide Cookies löschen
   res.clearCookie("accessToken", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -190,50 +257,82 @@ export const userLogout = asynchandler(async (req: Request, res: Response) => {
   res.status(200).json({ message: "Logout erfolgreich" });
 });
 
-export const refreshAccessToken = asynchandler(async (req: Request, res: Response) => {
-  const { userId, email, firstName, lastName, isAdmin } = req.user;
+export const refreshAccessToken = asynchandler(
+  async (req: Request, res: Response) => {
+    if (!req.user) {
+      res.status(401).json({ message: "Nicht authentifiziert" });
+      return;
+    }
 
-  const user = await User.findById(userId);
-  if (!user) {
-    res.status(403).json({ message: "Benutzer nicht gefunden" });
-    return;
-  }
+    const userId = req.user.userId ?? toIdString(req.user._id);
+    const email = req.user.email;
+    const firstName = req.user.firstName;
+    const lastName = req.user.lastName;
+    const isAdmin = req.user.isAdmin;
 
-  const newAccessToken = jwt.sign(
-    { userId, email, firstName, lastName, isAdmin },
-    process.env.ACCESSTOKEN!,
-    { expiresIn: "15m" }
-  );
+    if (
+      !userId ||
+      !email ||
+      !firstName ||
+      !lastName ||
+      typeof isAdmin === "undefined"
+    ) {
+      res.status(401).json({ message: "Ungültiger Auth-Kontext" });
+      return;
+    }
 
-  res.cookie("accessToken", newAccessToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    maxAge: 15 * 60 * 1000, // 15 Minuten
-    sameSite: "lax",
-  });
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(403).json({ message: "Benutzer nicht gefunden" });
+      return;
+    }
 
-  res.status(200).json({ message: "AccessToken erneuert" });
-});
+    const accessSecret = process.env.ACCESS_TOKEN ?? process.env.ACCESSTOKEN;
+    if (!accessSecret) {
+      res.status(500).json({ message: "ACCESS_TOKEN fehlt in ENV." });
+      return;
+    }
 
+    const newAccessToken = jwt.sign(
+      { userId, email, firstName, lastName, isAdmin },
+      accessSecret,
+      { expiresIn: "15m" },
+    );
 
+    res.cookie("accessToken", newAccessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 15 * 60 * 1000,
+      sameSite: "lax",
+    });
 
-export const checkAccessToken = asynchandler(async (req: Request, res: Response) => {
-  const token = req.headers.authorization?.split(" ")[1];
+    res.status(200).json({ message: "AccessToken erneuert" });
+  },
+);
 
-  if (!token) {
-    res.status(401).json({ message: "Kein Access Token vorhanden" });
-    return;
-  }
+export const checkAccessToken = asynchandler(
+  async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.split(" ")[1];
 
-  try {
-    const decoded = jwt.verify(token, process.env.ACCESSTOKEN as string);
-    res.status(200).json({ message: "Token gültig", user: decoded });
-  } catch (error) {
-    res.status(401).json({ message: "Token ungültig oder abgelaufen" });
-  }
-});
+    if (!token) {
+      res.status(401).json({ message: "Kein Access Token vorhanden" });
+      return;
+    }
 
- 
+    try {
+      const accessSecret = process.env.ACCESS_TOKEN ?? process.env.ACCESSTOKEN;
+      if (!accessSecret) {
+        res.status(500).json({ message: "ACCESS_TOKEN fehlt in ENV." });
+        return;
+      }
+
+      const decoded = jwt.verify(token, accessSecret);
+      res.status(200).json({ message: "Token gültig", user: decoded });
+    } catch {
+      res.status(401).json({ message: "Token ungültig oder abgelaufen" });
+    }
+  },
+);
 
 export const editUser = asynchandler(async (req: Request, res: Response) => {
   if (!req.user) {
@@ -241,9 +340,16 @@ export const editUser = asynchandler(async (req: Request, res: Response) => {
     return;
   }
 
-  const { firstName, lastName, email, defaultAddress } = req.body;
-  const user = await User.findById(req.user._id);
+  const requestUserId = req.user.userId ?? toIdString(req.user._id);
+  if (!requestUserId) {
+    res.status(401).json({ message: "Ungültiger Auth-Kontext" });
+    return;
+  }
 
+  const { firstName, lastName, email, defaultAddress } =
+    req.body as Partial<IUser>;
+
+  const user = await User.findById(requestUserId);
   if (!user) {
     res.status(404).json({ message: "Benutzer nicht gefunden" });
     return;
@@ -264,8 +370,9 @@ export const editUser = asynchandler(async (req: Request, res: Response) => {
   let adresseGeändert = false;
 
   if (defaultAddress) {
-    const { street,houseNumber, city, zip, country, phone } = defaultAddress;
-    if ( !street || !houseNumber|| !city || !zip || !country || !phone) {
+    const { street, houseNumber, city, zip, country, phone } =
+      defaultAddress as NonNullable<IUser["defaultAddress"]>;
+    if (!street || !houseNumber || !city || !zip || !country || !phone) {
       res.status(400).json({ message: "Unvollständige Adressdaten" });
       return;
     }
@@ -277,7 +384,7 @@ export const editUser = asynchandler(async (req: Request, res: Response) => {
       adresseGeändert = true;
     }
 
-    user.defaultAddress = { ...defaultAddress };
+    user.defaultAddress = { ...(defaultAddress as any) };
   }
 
   const updatedUser = await user.save();
@@ -300,7 +407,7 @@ export const editUser = asynchandler(async (req: Request, res: Response) => {
   res.status(200).json({
     message: "Benutzerdaten erfolgreich aktualisiert",
     user: {
-      id: updatedUser._id,
+      id: toIdString(updatedUser._id),
       firstName: updatedUser.firstName,
       lastName: updatedUser.lastName,
       email: updatedUser.email,
@@ -309,48 +416,144 @@ export const editUser = asynchandler(async (req: Request, res: Response) => {
   });
 });
 
-
-export const getUsers = asynchandler(async (req: Request, res: Response) => {
+export const getUsers = asynchandler(async (_req: Request, res: Response) => {
   try {
     const users = await User.find();
-    res.json(users); 
-  } catch (error) {
+    res.json(users);
+  } catch {
     res.status(500).json({ message: "Internal server error" });
   }
 });
 
- 
-export const getCurrentUser = asynchandler(async (req: Request, res: Response) => {
-  if (!req.user) {
-    res.status(401).json({ message: "Nicht eingeloggt" });
-    return;
+export const getCurrentUser = asynchandler(
+  async (req: Request, res: Response) => {
+    if (!req.user) {
+      res.status(401).json({ message: "Nicht eingeloggt" });
+      return;
+    }
+
+    const requestUserId = req.user.userId ?? toIdString(req.user._id);
+    if (!requestUserId) {
+      res.status(401).json({ message: "Ungültiger Auth-Kontext" });
+      return;
+    }
+
+    const user = await User.findById(requestUserId).select(
+      "-password -refreshToken",
+    );
+    if (!user) {
+      res.status(404).json({ message: "Benutzer nicht gefunden" });
+      return;
+    }
+
+    const accessToken = req.cookies?.accessToken as string | undefined;
+    const decoded = accessToken
+      ? (jwt.decode(accessToken) as { exp?: number } | null)
+      : null;
+
+    res.status(200).json({
+      user: {
+        ...user.toObject(),
+        exp: decoded?.exp ?? null,
+        userId: toIdString(user._id),
+      },
+    });
+  },
+);
+
+
+
+export const updateMyAdminProfile = asynchandler(async (req, res) => {
+  if (!req.user?.userId) {
+    res.status(401);
+    throw new Error("Nicht autorisiert");
   }
 
-  const user = await User.findById(req.user._id).select("-password -refreshToken");
+  const user = await User.findById(req.user.userId).select(
+    "firstName lastName email phone isAdmin defaultAddress"
+  );
 
   if (!user) {
-    res.status(404).json({ message: "Benutzer nicht gefunden" });
-    return;
+    res.status(404);
+    throw new Error("Admin nicht gefunden");
   }
 
-  // Zugriff auf decoded token
-  const accessToken = req.cookies.accessToken;
-  const decoded = jwt.decode(accessToken) as { exp?: number };
+  // (eigentlich reicht isAdmin-Middleware; optional als Extra-Schutz)
+  if (!user.isAdmin) {
+    res.status(403);
+    throw new Error("Nur Admins erlaubt");
+  }
 
-  res.status(200).json({
-    user: {
-      ...user.toObject(),
-      exp: decoded?.exp ?? null,      
-      userId: user._id.toString(),    
+  const { email, phone, address } = req.body as Partial<{
+    email: string;
+    phone: string;
+    address: any;
+  }>;
+
+  if (email && email !== user.email) {
+    const exists = await User.findOne({ email }).select("_id");
+    if (exists && !exists._id.equals(user._id)) {
+      res.status(400);
+      throw new Error("Diese E-Mail ist bereits vergeben");
     }
+    user.email = email;
+  }
+
+  if (typeof phone !== "undefined") user.phone = phone;
+
+  if (address && typeof address === "object") {
+    user.defaultAddress = {
+      ...(user.defaultAddress ?? {}),
+      ...address,
+    };
+  }
+
+  const saved = await user.save();
+  const obj = saved.toObject() as any;
+  delete obj.password;
+  delete obj.refreshToken;
+
+  res.json({
+    message: "Profil aktualisiert",
+    user: {
+      _id: toIdString(saved._id),
+      firstName: obj.firstName,
+      lastName: obj.lastName,
+      email: obj.email,
+      phone: obj.phone,
+      defaultAddress: obj.defaultAddress,
+      isAdmin: obj.isAdmin,
+    },
   });
 });
 
+export const getOwner = asynchandler(async (_req: Request, res: Response) => {
+  const owner = await User.findOne({ owner: true })
+    .select("firstName lastName email phone defaultAddress")
+    .lean();
 
+  if (!owner) {
+    res.status(404).json({ message: "Owner not found" });
+    return;
+  }
 
+  // defaultAddress kann optional sein -> safe access
+  const a = (owner as any).defaultAddress as
+    | IUser["defaultAddress"]
+    | undefined;
 
-
-
-
-
-
+  res.status(200).json({
+    shop: "ENTOP HOME",
+    inhaber: `${(owner as any).firstName} ${(owner as any).lastName}`,
+    email: (owner as any).email,
+    phone: (owner as any).phone,
+    address: {
+      street: a?.street ?? "",
+      houseNumber: a?.houseNumber ?? "",
+      zip: a?.zip ?? "",
+      city: a?.city ?? "",
+      country: a?.country ?? "",
+      phone: a?.phone ?? "",
+    },
+  });
+});

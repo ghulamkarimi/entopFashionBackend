@@ -11,7 +11,7 @@ const orderSchema = new mongoose.Schema(
       },
       email: {
         type: String,
-        required: function () {
+        required: function (this: any) {
           return this.userId === null; // Nur für Gäste
         },
       },

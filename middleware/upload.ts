@@ -13,7 +13,12 @@ const storage = multer.diskStorage({
 
 // Dateifilter (z. B. nur Bilder erlauben)
 const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  if (file.mimetype.startsWith("image/")) {
+  if (file.mimetype.startsWith("image/") ||
+      file.mimetype === "application/pdf" || // Optional: PDF-Dateien erlauben
+      file.mimetype === "application/msword" || // Optional: Word-Dokumente erlauben
+      file.mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") { // Optional: Word-Dokumente (docx) erlauben
+    // Hier können weitere Dateitypen hinzugefügt werden, falls erforderlich
+
     cb(null, true);
   } else {
     cb(new Error("Nur Bilddateien sind erlaubt!"));

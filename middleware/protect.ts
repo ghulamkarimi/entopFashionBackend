@@ -4,14 +4,12 @@ import { Request, Response, NextFunction } from "express";
 import User from "../models/userSchema";
 
 export const protect = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  let token;
+  let token: string | undefined;
 
-  // 1. Entweder aus Header...
-  if (req.headers.authorization?.startsWith("Bearer")) {
+  if (req.headers.authorization?.startsWith("Bearer ")) {
     token = req.headers.authorization.split(" ")[1];
   }
 
-  // 2. ...oder aus Cookie
   if (!token && req.cookies?.accessToken) {
     token = req.cookies.accessToken;
   }
@@ -21,11 +19,21 @@ export const protect = asyncHandler(async (req: Request, res: Response, next: Ne
     throw new Error("Kein Token vorhanden");
   }
 
+  const accessSecret = process.env.ACCESS_TOKEN;
+  if (!accessSecret) {
+    res.status(500);
+    throw new Error("ACCESS_TOKEN fehlt in ENV");
+  }
+
   try {
-    const decoded = jwt.verify(token, process.env.ACCESSTOKEN!) as { userId: string };
+    const decoded = jwt.verify(token, accessSecret) as { userId?: string };
+
+    if (!decoded.userId) {
+      res.status(401);
+      throw new Error("Token enthält keine userId");
+    }
 
     const user = await User.findById(decoded.userId).select("-password");
-
     if (!user) {
       res.status(401);
       throw new Error("Benutzer nicht gefunden – möglicherweise gelöscht");
@@ -41,9 +49,10 @@ export const protect = asyncHandler(async (req: Request, res: Response, next: Ne
     };
 
     next();
-  } catch (error) {
-    res.status(401);
-    throw new Error("Token ungültig oder abgelaufen");
-  }
-});
+ } catch (error: any) {
+  console.log("JWT verify error:", error?.name, error?.message);
+  res.status(401);
+  throw new Error(error?.name === "TokenExpiredError" ? "Token abgelaufen" : "Token ungültig");
+}
 
+});

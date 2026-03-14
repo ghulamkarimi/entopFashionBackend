@@ -1,0 +1,8 @@
+###create color
+POST http://localhost:7004/api/color
+Content-Type: application/json
+
+{
+  "name": "Green",
+  "hexCode": "#07ec1a"
+}

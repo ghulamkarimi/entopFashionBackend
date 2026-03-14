@@ -11,7 +11,7 @@ Content-Type: application/json
 }
 
 #### login user
-POST http://localhost:7004/api/user/login
+POST  http://localhost:7004/api/user/login
 Content-Type: application/json
 
 {
@@ -19,10 +19,14 @@ Content-Type: application/json
     "password": "Asra.2020!"
 }
 
+#### Owner abrufen
+GET http://localhost:7004/api/user/getOwner
+Content-Type: application/json
+
 
 ### Me abrufen
 GET http://localhost:7004/api/user/me
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODFhMGU1NTVjMmQ3MDg3NGIzYWIwMzAiLCJmaXJzdE5hbWUiOiJHaHVsYW0iLCJsYXN0TmFtZSI6IkthcmltaSIsImVtYWlsIjoicmFoaW1pLjkwMTcxOUBnbWFpbC5jb20iLCJpc0FkbWluIjpmYWxzZSwiaWF0IjoxNzQ2NjA0NzEzLCJleHAiOjE3NDY2MDU2MTN9.id4YYh9H0iofohJK13SdGCX9SHMzxg7hqkZD9nvm6nc
+Content-Type: application/json
 
 ### Refresh Token testen
 POST http://localhost:7004/api/user/refresh-token
@@ -32,7 +36,7 @@ Cookie: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2ZmNDc4MGY4NWZhNjQ
 ### edit user
 PUT http://localhost:7004/api/user/edit
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODFiNDY5YTNhZWUxOWY3ZTUzY2UxMjkiLCJmaXJzdE5hbWUiOiJSZXphIiwibGFzdE5hbWUiOiJSYWhpbWkiLCJlbWFpbCI6InJhaGltaS45MDE3MTlAZ21haWwuY29tIiwiaXNBZG1pbiI6ZmFsc2UsImlhdCI6MTc0NzcyOTk5MiwiZXhwIjoxNzQ3NzMwODkyfQ.MTGRLMgaCpfjTD4zLQflP8yuaYnYmD6P47ihENdxAW8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OTk0YjNlNjAxMTg0NTAxYTg3NzAwYmUiLCJlbWFpbCI6InJhaGltaXouOTAxNzE5QGdtYWlsLmNvbSIsImZpcnN0TmFtZSI6IlJlenphIiwibGFzdE5hbWUiOiJSYWhpbWkiLCJpc0FkbWluIjpmYWxzZSwiaWF0IjoxNzcxMzUzMjAxLCJleHAiOjE3NzEzNTQxMDF9.Rs3wdwHHa-awC1RsivGMTclXwDPf6koMuZjrhiKvbsM
 
 {
   "firstName": "Reza",

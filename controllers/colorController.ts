@@ -4,19 +4,33 @@ import Color from "../models/colorSchema";
  
 
 // Neue Farbe erstellen
+
+
 export const createColor = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name } = req.body; // Example: expecting a color name
-    if (!name) {
-      res.status(400).json({ message: "Color name is required" });
+    const { name, hexCode } = req.body;
+
+    if (!name || !hexCode) {
+      res.status(400).json({ message: "Name und Hex-Code sind erforderlich" });
       return;
     }
-    // Replace with your actual logic (e.g., save to database)
-    res.status(201).json({ message: `Color ${name} created successfully` });
+
+    // Prüfen, ob die Farbe bereits existiert
+    const existingColor = await Color.findOne({ hexCode: hexCode.toLowerCase() });
+    if (existingColor) {
+      res.status(409).json({ message: "Farbe mit diesem Hex-Code existiert bereits" });
+      return;
+    }
+
+    const newColor = new Color({ name, hexCode: hexCode.toLowerCase() });
+    await newColor.save();
+
+    res.status(201).json({ message: `Farbe ${name} erfolgreich erstellt`, color: newColor });
   } catch (error) {
-    res.status(500).json({ message: "Error creating color", error });
+    res.status(500).json({ message: "Fehler beim Erstellen der Farbe", error });
   }
 };
+
 
 // Alle Farben abrufen
 export const getAllColors = async (req: Request, res: Response) => {

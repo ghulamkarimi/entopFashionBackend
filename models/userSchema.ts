@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import { IUser } from "../interface";
 
-export interface IUserDocument extends IUser, mongoose.Document {
+export interface IUserDocument extends IUser {
   isPasswordMatch(enteredPassword: string): Promise<boolean>;
 }
 
@@ -17,9 +17,10 @@ const userSchema = new mongoose.Schema(
     customerNumber: { type: String, unique: true },
     isGuest: { type: Boolean, default: false },
     accessToken: { type: String },
+    owner: { type: Boolean, required: false },
     refreshToken: { type: String },
 
-    // 🆕 Optional gespeicherte Adresse
+    //  Optional gespeicherte Adresse
     defaultAddress: {
       fullName: { type: String },
       street:   { type: String },
@@ -33,7 +34,11 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-
+userSchema.index(
+  { owner: 1 },
+  { unique: true, partialFilterExpression: { owner: true } }
+);
+  
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
 

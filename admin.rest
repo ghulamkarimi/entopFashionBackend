@@ -1,0 +1,16 @@
+PUT http://localhost:7004/api/admin/profile
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OTk0YmMzZTQ5ZDIzYTBhZjgzOWI3MjQiLCJmaXJzdE5hbWUiOiJSZXphIiwibGFzdE5hbWUiOiJSYWhpbWkiLCJlbWFpbCI6InJhaGltaS45MDE3MTlAZ21haWwuY29tIiwiaXNBZG1pbiI6dHJ1ZSwiY3VzdG9tZXJOdW1iZXIiOiJSUjYzMTEiLCJvd25lciI6dHJ1ZSwiZGVmYXVsdEFkZHJlc3MiOnt9LCJpYXQiOjE3NzEzNTczOTAsImV4cCI6MTc3MTM1ODI5MH0.tLPobjdznOadNIviyrV6O3DnoiqC9mkNCk9mfm_C4N4
+
+{
+  "email": "rahimi.901719@gmail.com",
+  "phone": "+49 151 23456789",
+  "address": {
+    "fullName": "Reza Rahimi",
+    "street": "Van-Recum-Str. 6",
+    "city": "Bad Kreuznach",
+    "zip": "55545",
+    "country": "Deutschland",
+    "phone": "+49 151 23456789"
+}
+}
