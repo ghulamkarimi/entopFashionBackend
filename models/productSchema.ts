@@ -9,9 +9,23 @@ const ProductSchema: Schema = new Schema({
   price: { type: Number, required: true, min: 0 },
   image: { type: [String], required: true }, // Array von Bild-URLs (z. B. ["/uploads/image1.jpg", "/uploads/image2.jpg"])
   category: { type: Schema.Types.ObjectId, ref: "Category", required: true },
-  stock: { type: Number, required: true, min: 0 },
+  stock: { type: Number, required: true, min: 0, default: 0 },
   sizes: [{ type: String }], // Optional, falls Größen relevant sind
-  colors: [{ type: mongoose.Schema.Types.ObjectId, ref: "Color" }],
+  colors: [
+    {
+      colorId: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: "Color",
+        required: true 
+      },
+      quantity: { 
+        type: Number, 
+        required: true, 
+        min: 0, 
+        default: 0 
+      }
+    }
+  ],
   weight: { type: Number, required: true, min: 0 }, // Gewicht in Kilogramm (z. B. 1.5)
   createdAt: { type: Date, default: Date.now },
   gender: {
