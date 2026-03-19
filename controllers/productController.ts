@@ -3,11 +3,10 @@ import { Request, Response } from "express";
 import mongoose, { Types } from "mongoose";
 import Product from "../models/productSchema";
 import Category from "../models/CategorySchema";
-import fs from "fs";
+import fs from "fs/promises";
 import path from "path";
 import Color from "../models/colorSchema";
-
-
+import { genderValues } from "../gender";
 
 function generateSKU(name: string): string {
   const cleanName = name
@@ -23,7 +22,6 @@ function generateSKU(name: string): string {
   const rand = Math.floor(Math.random() * 90000 + 10000);
   return `${cleanName}-${dateString}-${rand}`;
 }
-
 
 // Produkt erstellen (POST /api/products)
 export const createProduct = asyncHandler(
@@ -52,34 +50,12 @@ export const createProduct = asyncHandler(
         isFeatured,
         deliveryTime,
         tags,
+        gender,
         material,
         originCountry,
       } = req.body;
 
-
-  
-      const images =
-        Array.isArray(req.files) && req.files.length > 0
-          ? (req.files as Express.Multer.File[]).map(
-              (file) => `/uploads/${file.filename}`
-            )
-          : [];
-
-      if (
-        !name ||
-        !description ||
-        price === undefined ||
-        !category ||
-        stock === undefined ||
-        weight === undefined ||
-        images.length === 0
-      ) {
-        res.status(400).json({
-          message:
-            "Alle erforderlichen Felder müssen ausgefüllt sein, inkl. mindestens einem Bild",
-        });
-        return;
-      }
+      const images = req.body.images || [];
 
       if (price < 0 || weight < 0 || stock < 0) {
         res.status(400).json({
@@ -87,6 +63,16 @@ export const createProduct = asyncHandler(
         });
         return;
       }
+
+      // if (!gender) {
+      //   res.status(400).json({ message: "Gender ist erforderlich" });
+      //   return;
+      // }
+
+      // if (!genderValues.includes(gender)) {
+      //   res.status(400).json({ message: "Ungültiger Gender-Wert" });
+      //   return;
+      // }
 
       if (!mongoose.isValidObjectId(category)) {
         res.status(400).json({ message: "Ungültige Kategorie-ID" });
@@ -122,7 +108,7 @@ export const createProduct = asyncHandler(
           }
         } else if (Array.isArray(colors)) {
           parsedColors = colors.map((c: any) =>
-            typeof c === "string" ? JSON.parse(c) : c
+            typeof c === "string" ? JSON.parse(c) : c,
           );
         }
       }
@@ -143,11 +129,10 @@ export const createProduct = asyncHandler(
         }
       }
 
-          let productSKU = sku;
+      let productSKU = sku;
       if (!productSKU) {
         productSKU = generateSKU(name);
       }
-
 
       // Produkt speichern
       const newProduct = new Product({
@@ -162,11 +147,12 @@ export const createProduct = asyncHandler(
         weight,
         discount: discountPercent,
         brand,
-        sku :productSKU,
+        sku: productSKU,
         newPrice,
         isFeatured,
         deliveryTime,
         tags,
+        gender,
         material,
         originCountry,
       });
@@ -182,7 +168,7 @@ export const createProduct = asyncHandler(
         error: (error as Error).message,
       });
     }
-  }
+  },
 );
 // Alle Produkte abrufen (GET /api/products)
 export const getProducts = asyncHandler(
@@ -199,10 +185,11 @@ export const getProducts = asyncHandler(
         error: (error as Error).message,
       });
     }
-  }
+  },
 );
 
 // Produkt aktualisieren (PUT /api/products/:id)
+
 export const updateProduct = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     try {
@@ -221,15 +208,12 @@ export const updateProduct = asyncHandler(
         isFeatured,
         deliveryTime,
         tags,
+        gender,
         material,
         originCountry,
       } = req.body;
-      const uploadedImages =
-        Array.isArray(req.files) && req.files.length > 0
-          ? (req.files as Express.Multer.File[]).map(
-              (file) => `/uploads/${file.filename}`
-            )
-          : [];
+
+      const uploadedImages = req.body.images || [];
 
       if (!mongoose.isValidObjectId(req.params.id)) {
         res.status(400).json({ message: "Ungültige Produkt-ID" });
@@ -242,36 +226,31 @@ export const updateProduct = asyncHandler(
         return;
       }
 
-      // Alte Bilder löschen, wenn neue hochgeladen wurden
       if (
         uploadedImages.length > 0 &&
         product.image &&
         Array.isArray(product.image)
       ) {
-        product.image.forEach((oldImg) => {
+        for (const oldImg of product.image) {
           const filename = oldImg.split("/").pop();
-          const filePath = path.join(process.cwd(), "uploads", filename || "");
-          if (fs.existsSync(filePath)) {
-            fs.unlink(filePath, (err) => {
-              if (err) {
-                console.warn(
-                  `⚠️ Fehler beim Löschen der Bilddatei: ${filePath}`,
-                  err.message
-                );
-              }
-            });
-          } else {
-            console.warn(`⚠️ Bild existiert nicht: ${filePath}`);
+          if (!filename) continue;
+
+          const filePath = path.resolve("uploads", filename);
+
+          try {
+            await fs.unlink(filePath);
+          } catch (err) {
+            console.warn(` Datei konnte nicht gelöscht werden: ${filePath}`);
           }
-        });
+        }
       }
 
-      // Kategorie prüfen
       if (category) {
         if (!mongoose.isValidObjectId(category)) {
           res.status(400).json({ message: "Ungültige Kategorie-ID" });
           return;
         }
+
         const categoryExists = await Category.findById(category);
         if (!categoryExists) {
           res.status(404).json({ message: "Kategorie nicht gefunden" });
@@ -279,19 +258,19 @@ export const updateProduct = asyncHandler(
         }
       }
 
-      // Farben prüfen und ggf. erstellen wie bei createProduct
       let colorIds: Types.ObjectId[] = [];
       let parsedColors: any[] = [];
+
       if (colors) {
         if (typeof colors === "string") {
           try {
             parsedColors = JSON.parse(colors);
-          } catch (e) {
+          } catch {
             parsedColors = [];
           }
         } else if (Array.isArray(colors)) {
           parsedColors = colors.map((c: any) =>
-            typeof c === "string" ? JSON.parse(c) : c
+            typeof c === "string" ? JSON.parse(c) : c,
           );
         }
       }
@@ -299,48 +278,59 @@ export const updateProduct = asyncHandler(
       if (parsedColors.length > 0) {
         for (const color of parsedColors) {
           if (!color.name || !color.hexCode) continue;
+
           const hexLower = color.hexCode.toLowerCase();
           let existingColor = (await Color.findOne({
             hexCode: hexLower,
           })) as any;
+
           if (!existingColor) {
-            const newColor = new Color({ name: color.name, hexCode: hexLower });
-            existingColor = await newColor.save();
+            existingColor = await new Color({
+              name: color.name,
+              hexCode: hexLower,
+            }).save();
           }
+
           colorIds.push(existingColor._id as Types.ObjectId);
         }
       }
 
-      // Validierungen
-      if (price !== undefined && price < 0) {
+      if (price !== undefined && Number(price) < 0) {
         res.status(400).json({ message: "Preis darf nicht negativ sein" });
         return;
       }
-      if (weight !== undefined && weight < 0) {
+      if (gender !== undefined && !genderValues.includes(gender)) {
+        res.status(400).json({ message: "Ungültiger Gender-Wert" });
+        return;
+      }
+
+      if (weight !== undefined && Number(weight) < 0) {
         res.status(400).json({ message: "Gewicht darf nicht negativ sein" });
         return;
       }
-      if (stock !== undefined && stock < 0) {
+
+      if (stock !== undefined && Number(stock) < 0) {
         res
           .status(400)
           .json({ message: "Lagerbestand darf nicht negativ sein" });
         return;
       }
 
-      // Felder aktualisieren
       product.name = name ?? product.name;
       product.description = description ?? product.description;
-      product.price = price !== undefined ? price : product.price;
+      product.price = price !== undefined ? Number(price) : product.price;
+      product.gender = gender ?? product.gender;
       product.image =
         uploadedImages.length > 0 ? uploadedImages : product.image;
       product.category = category ?? product.category;
-      product.stock = stock !== undefined ? stock : product.stock;
+      product.stock = stock !== undefined ? Number(stock) : product.stock;
       product.sizes = sizes ?? product.sizes;
       product.colors = colorIds.length > 0 ? colorIds : product.colors;
-      product.weight = weight !== undefined ? weight : product.weight;
+      product.weight = weight !== undefined ? Number(weight) : product.weight;
       product.brand = brand ?? product.brand;
       product.sku = sku ?? product.sku;
-      product.newPrice = newPrice !== undefined ? newPrice : product.newPrice;
+      product.newPrice =
+        newPrice !== undefined ? Number(newPrice) : product.newPrice;
       product.isFeatured =
         isFeatured !== undefined ? isFeatured : product.isFeatured;
       product.deliveryTime = deliveryTime ?? product.deliveryTime;
@@ -348,21 +338,16 @@ export const updateProduct = asyncHandler(
       product.material = material ?? product.material;
       product.originCountry = originCountry ?? product.originCountry;
 
-      // Rabatt automatisch berechnen nach Aktualisierung von price/newPrice
       if (
         product.price !== undefined &&
         product.newPrice !== undefined &&
-        product.price.valueOf() > 0 &&
-        product.newPrice.valueOf() < product.price.valueOf()
+        Number(product.price) > 0 &&
+        Number(product.newPrice) < Number(product.price)
       ) {
         product.discount = Math.round(
-          (1 - Number(product.newPrice) / Number(product.price)) * 100
+          (1 - Number(product.newPrice) / Number(product.price)) * 100,
         );
-      } else if (
-        product.price !== undefined &&
-        product.newPrice !== undefined &&
-        (product.newPrice >= product.price || product.price === 0)
-      ) {
+      } else {
         product.discount = 0;
       }
 
@@ -375,75 +360,63 @@ export const updateProduct = asyncHandler(
         error: (error as Error).message,
       });
     }
-  }
+  }, 
 );
-
 // Produkt löschen (DELETE /api/products/:id)
+
+
 export const deleteProduct = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
-    try {
-      if (!mongoose.isValidObjectId(req.params.id)) {
-        res.status(400).json({ message: "Ungültige Produkt-ID" });
-        return;
-      }
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      res.status(400).json({ message: "Ungültige Produkt-ID" });
+      return;
+    }
 
-      if (!req.user?.isAdmin) {
-        res.status(403).json({ message: "Nur Admins dürfen Produkte löschen" });
-        return;
-      }
+    if (!req.user?.isAdmin) {
+      res.status(403).json({ message: "Nur Admins dürfen Produkte löschen" });
+      return;
+    }
 
-      const product = await Product.findById(req.params.id);
-      if (!product) {
-        res.status(404).json({ message: "Produkt nicht gefunden" });
-        return;
-      }
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      res.status(404).json({ message: "Produkt nicht gefunden" });
+      return;
+    }
 
-      // 🧹 Bilder löschen
-      if (product.image && Array.isArray(product.image)) {
-        for (const imgPath of product.image) {
-          if (imgPath.startsWith("/uploads/")) {
-            const cleanedPath = imgPath.replace(/^\/+/g, "");
-            const absolutePath = path.join(
-              process.cwd(),
-              "uploads",
-              path.basename(cleanedPath)
-            );
+    // Bilder löschen
+    if (Array.isArray(product.image)) {
+      for (const imgPath of product.image) {
+        if (!imgPath.startsWith("/uploads/")) continue;
 
-            console.log("🧾 Suche Bild:", absolutePath);
+        const absolutePath = path.resolve(
+          "uploads",
+          path.basename(imgPath)
+        );
 
-            if (fs.existsSync(absolutePath)) {
-              fs.unlink(absolutePath, (err) => {
-                if (err) {
-                  console.warn(
-                    `⚠️ Fehler beim Löschen der Bilddatei ${imgPath}:`,
-                    err.message
-                  );
-                }
-              });
-            } else {
-              console.warn(`⚠️ Bild nicht gefunden: ${absolutePath}`);
-            }
+        try {
+          await fs.unlink(absolutePath);
+        } catch (err: any) {
+          if (err.code !== "ENOENT") {
+            console.warn("Fehler beim Löschen:", err.message);
           }
         }
       }
-      const colorIds = product.colors.map((id) => id.toString());
-
-      for (const colorId of colorIds) {
-        const otherProduct = await Product.findOne({ colors: colorId });
-        if (!otherProduct) {
-          // Wenn die Farbe in keinem anderen Produkt mehr verwendet wird: Löschen!
-          await Color.findByIdAndDelete(colorId);
-        }
-      }
-
-      await product.deleteOne();
-
-      res.status(200).json({ message: "Produkt und Bilder gelöscht" });
-    } catch (error) {
-      res.status(500).json({
-        message: "Fehler beim Löschen des Produkts",
-        error: (error as Error).message,
-      });
     }
+
+    // Farben aufräumen
+    for (const colorId of product.colors) {
+      const otherProduct = await Product.findOne({
+        colors: colorId,
+        _id: { $ne: product._id },
+      });
+
+      if (!otherProduct) {
+        await Color.findByIdAndDelete(colorId);
+      }
+    }
+
+    await product.deleteOne();
+
+    res.status(200).json({ message: "Produkt und Bilder gelöscht" });
   }
 );

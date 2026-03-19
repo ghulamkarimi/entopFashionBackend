@@ -1,7 +1,7 @@
 #### create category
 POST http://localhost:7004/api/products
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OTk0YmMzZTQ5ZDIzYTBhZjgzOWI3MjQiLCJmaXJzdE5hbWUiOiJSZXphIiwibGFzdE5hbWUiOiJSYWhpbWkiLCJlbWFpbCI6InJhaGltaS45MDE3MTlAZ21haWwuY29tIiwiaXNBZG1pbiI6dHJ1ZSwiY3VzdG9tZXJOdW1iZXIiOiJSUjYzMTEiLCJvd25lciI6dHJ1ZSwiZGVmYXVsdEFkZHJlc3MiOnt9LCJpYXQiOjE3NzEzNTczOTAsImV4cCI6MTc3MTM1ODI5MH0.tLPobjdznOadNIviyrV6O3DnoiqC9mkNCk9mfm_C4N4
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OGI5YTQ0YzZhODBhODFlYzk0NGZiMzYiLCJmaXJzdE5hbWUiOiJHaHVsYW0gSG9zc2VpbiIsImxhc3ROYW1lIjoiS2FyaW1pIiwiZW1haWwiOiJrYXJpbWlhbWlyaG9zc2VpbjEyQGdtYWlsLmNvbSIsImlzQWRtaW4iOnRydWUsImN1c3RvbWVyTnVtYmVyIjoiR0syMDgwIiwib3duZXIiOmZhbHNlLCJkZWZhdWx0QWRkcmVzcyI6eyJzdHJlZXQiOiJ2YW4tcmVjdW0tU3RyYcOfZSIsImhvdXNlTnVtYmVyIjoiNTQiLCJjaXR5IjoiQmFkIEtyZXV6bmFjaCIsInppcCI6IjU1NTQ1IiwiY291bnRyeSI6IkRldXRzY2hsYW5kIiwicGhvbmUiOiIwMTcwNzQwNzQxNyJ9LCJpYXQiOjE3NzM5MTExOTMsImV4cCI6MTc3MzkxMjA5M30.tDVPNlcsuwnPN0nuR384kGc-8kN7f2qsDGzHVZT21oI
 
 {
   "name": "Winterjacke",
@@ -16,6 +16,47 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OTk0Y
 ],
 "weight": 1.5
 }
+
+#### create product (mit Sharp-Verarbeitung)
+### Produkt erstellen mit echtem Bild (für Sharp Test)
+POST http://localhost:7004/api/products
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OGI5YTQ0YzZhODBhODFlYzk0NGZiMzYiLCJmaXJzdE5hbWUiOiJHaHVsYW0gSG9zc2VpbiIsImxhc3ROYW1lIjoiS2FyaW1pIiwiZW1haWwiOiJrYXJpbWlhbWlyaG9zc2VpbjEyQGdtYWlsLmNvbSIsImlzQWRtaW4iOnRydWUsImN1c3RvbWVyTnVtYmVyIjoiR0syMDgwIiwib3duZXIiOmZhbHNlLCJkZWZhdWx0QWRkcmVzcyI6eyJzdHJlZXQiOiJ2YW4tcmVjdW0tU3RyYcOfZSIsImhvdXNlTnVtYmVyIjoiNTQiLCJjaXR5IjoiQmFkIEtyZXV6bmFjaCIsInppcCI6IjU1NTQ1IiwiY291bnRyeSI6IkRldXRzY2hsYW5kIiwicGhvbmUiOiIwMTcwNzQwNzQxNyJ9LCJpYXQiOjE3NzM5MTM1MzMsImV4cCI6MTc3MzkxNDQzM30.NjndXSkWILqZaDk13Dhu4Ee84NljsGD7PsPDENNfaRQ
+Content-Type: multipart/form-data; boundary=WebPTest
+
+--WebPTest
+Content-Disposition: form-data; name="name"
+
+Winterjacke
+--WebPTest
+Content-Disposition: form-data; name="description"
+
+Warme Jacke für den Winter
+--WebPTest
+Content-Disposition: form-data; name="price"
+
+99.99
+--WebPTest
+Content-Disposition: form-data; name="category"
+
+682dac0c1e5d8b655255ca0f
+--WebPTest
+Content-Disposition: form-data; name="stock"
+
+50
+--WebPTest
+Content-Disposition: form-data; name="weight"
+
+1.5
+--WebPTest
+Content-Disposition: form-data; name="colors"
+
+[{"name":"Schwarz","hexCode":"#000000"}]
+--WebPTest
+Content-Disposition: form-data; name="images"; filename="image2.jpg"
+Content-Type: image/jpeg
+
+< C:\Users\karim\OneDrive\Pictures\image2.jpg
+--WebPTest--
 
 #### get all products
 GET http://localhost:7004/api/products

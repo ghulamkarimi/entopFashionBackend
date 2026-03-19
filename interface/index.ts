@@ -50,7 +50,7 @@ export interface IProduct extends Document {
   name: String;
   description: String;
   price: Number;
-  image?:String[];
+  image?:string[];
   category: String | mongoose.Types.ObjectId;
   stock: Number;
   colors: (IColorOption | mongoose.Types.ObjectId)[];
@@ -63,6 +63,7 @@ export interface IProduct extends Document {
   deliveryTime?: String;
   tags?: String[];
   material?: String;
+  gender: GenderType;
   originCountry?: String;
   weight: Number;
   createdAt: Date;
