@@ -36,7 +36,7 @@ export const protect = asyncHandler(async (req: Request, res: Response, next: Ne
     const user = await User.findById(decoded.userId).select("-password");
     if (!user) {
       res.status(401);
-      throw new Error("Benutzer nicht gefunden – möglicherweise gelöscht");
+      throw new Error("Benutzer nicht gefunden - möglicherweise gelöscht");
     }
 
     req.user = {

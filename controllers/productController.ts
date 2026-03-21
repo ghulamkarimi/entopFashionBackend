@@ -6,7 +6,7 @@ import Category from "../models/CategorySchema";
 import fs from "fs/promises";
 import path from "path";
 import Color from "../models/colorSchema";
-import { genderValues } from "../gender";
+
 
 function generateSKU(name: string): string {
   const cleanName = name
@@ -86,7 +86,7 @@ export const createProduct = asyncHandler(
       }
 
       // Farben verarbeiten und verknüpfen
-      let colorData: { colorId: Types.ObjectId; quantity: number }[] = [];
+      let colorData: { colorId: Types.ObjectId; quantity: number; price:number }[] = [];
       let parsedColors: any[] = [];
 
       if (colors) {
@@ -107,9 +107,14 @@ export const createProduct = asyncHandler(
             }).save();
           }
 
+          const finalColorPrice = (color.price !== undefined && color.price !== null) 
+    ? Number(color.price) 
+    : Number(price);
+
           colorData.push({
             colorId: existingColor._id as Types.ObjectId,
             quantity: Number(color.quantity) || 0, // Hier ziehen wir die Menge pro Farbe
+            price: finalColorPrice, // Hier ziehen wir den Preis pro Farbe oder verwenden den Standardpreis
           });
         }
       }
@@ -219,33 +224,52 @@ export const updateProduct = asyncHandler(
       }
 
       // --- FARBEN & QUANTITY VERARBEITUNG ---
-      if (colors) {
-        let parsedColors =
-          typeof colors === "string" ? JSON.parse(colors) : colors;
-        let colorData: { colorId: Types.ObjectId; quantity: number }[] = [];
+if (colors) {
+  const parsedColors =
+    typeof colors === "string" ? JSON.parse(colors) : colors;
 
-        for (const color of parsedColors) {
-          if (!color.hexCode) continue;
-          const hexLower = color.hexCode.toLowerCase();
+  let colorData: { colorId: Types.ObjectId; quantity: number; price: number }[] = [];
 
-          let existingColor = await Color.findOne({ hexCode: hexLower });
-          if (!existingColor) {
-            existingColor = await new Color({
-              name: color.name || "Unbekannt",
-              hexCode: hexLower,
-            }).save();
-          }
+  for (const color of parsedColors) {
+    let existingColor = null;
 
-          colorData.push({
-            colorId: existingColor._id as Types.ObjectId,
-            quantity: Number(color.quantity) || 0,
-          });
-        }
+    // Fall 1: colorId wurde direkt geschickt
+    if (color.colorId && mongoose.isValidObjectId(color.colorId)) {
+      existingColor = await Color.findById(color.colorId);
+    }
 
-        product.colors = colorData as any;
-        // Der Gesamtstock wird aus der Summe der Farbmengen berechnet
-        product.stock = colorData.reduce((acc, curr) => acc + curr.quantity, 0);
-      } else if (stock !== undefined) {
+    // Fall 2: hexCode wurde geschickt
+    if (!existingColor && color.hexCode) {
+      const hexLower = String(color.hexCode).toLowerCase();
+
+      existingColor = await Color.findOne({ hexCode: hexLower });
+
+      if (!existingColor) {
+        existingColor = await new Color({
+          name: color.name || "Unbekannt",
+          hexCode: hexLower,
+        }).save();
+      }
+    }
+
+    if (!existingColor) continue;
+
+    const finalColorPrice =
+      color.price !== undefined && color.price !== null
+        ? Number(color.price)
+        : Number(price ?? product.price);
+
+    colorData.push({
+      colorId: existingColor._id as Types.ObjectId,
+      quantity: Number(color.quantity) || 0,
+      price: finalColorPrice,
+    });
+  }
+
+  product.colors = colorData as any;
+  product.stock = colorData.reduce((acc, curr) => acc + curr.quantity, 0);
+}
+      else if (stock !== undefined) {
         // Fallback: Falls keine Farben geschickt werden, aber ein Stock-Wert
         product.stock = Number(stock);
       }

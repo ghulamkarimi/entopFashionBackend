@@ -5,7 +5,7 @@ Content-Type: application/json
 {
     "firstName": "Reza",
     "lastName": "Rahimi",
-    "email": "rahimi.901719@gmail.com",
+    "email": "rahimi.9017@gmail.com",
     "password": "Asra.2020!",
     "confirmPassword": "Asra.2020!"
 }
@@ -36,7 +36,7 @@ Cookie: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2ZmNDc4MGY4NWZhNjQ
 ### edit user
 PUT http://localhost:7004/api/user/edit
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OTk0YjNlNjAxMTg0NTAxYTg3NzAwYmUiLCJlbWFpbCI6InJhaGltaXouOTAxNzE5QGdtYWlsLmNvbSIsImZpcnN0TmFtZSI6IlJlenphIiwibGFzdE5hbWUiOiJSYWhpbWkiLCJpc0FkbWluIjpmYWxzZSwiaWF0IjoxNzcxMzUzMjAxLCJleHAiOjE3NzEzNTQxMDF9.Rs3wdwHHa-awC1RsivGMTclXwDPf6koMuZjrhiKvbsM
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OGI5YTQ0YzZhODBhODFlYzk0NGZiMzYiLCJmaXJzdE5hbWUiOiJHaHVsYW0gSG9zc2VpbiIsImxhc3ROYW1lIjoiS2FyaW1pIiwiZW1haWwiOiJrYXJpbWlhbWlyaG9zc2VpbjEyQGdtYWlsLmNvbSIsImlzQWRtaW4iOnRydWUsImN1c3RvbWVyTnVtYmVyIjoiR0syMDgwIiwib3duZXIiOmZhbHNlLCJkZWZhdWx0QWRkcmVzcyI6eyJzdHJlZXQiOiJ2YW4tcmVjdW0tU3RyYcOfZSIsImhvdXNlTnVtYmVyIjoiNTQiLCJjaXR5IjoiQmFkIEtyZXV6bmFjaCIsInppcCI6IjU1NTQ1IiwiY291bnRyeSI6IkRldXRzY2hsYW5kIiwicGhvbmUiOiIwMTcwNzQwNzQxNyJ9LCJpYXQiOjE3NzQwNjE5NzcsImV4cCI6MTc3NDA2Mjg3N30.uFBmKkP_uRvR6K7zcGLc52wbsgrPRsTPIYgBBveUaG4
 
 {
   "firstName": "Reza",

@@ -28,7 +28,7 @@ productRouter.put(
   protect, 
   isAdmin, 
   upload.array("images", 5), 
-  resizeProductImages,          // Hier hat es bei dir im Code noch gefehlt!
+  resizeProductImages,         
   updateProduct
 );
 productRouter.get("/", getProducts); // GET /api/products

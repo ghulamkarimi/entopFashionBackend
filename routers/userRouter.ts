@@ -12,6 +12,7 @@ userRouter.post("/login", rateLimiter,loginUser)
 userRouter.delete("/logout", userLogout);
 userRouter.get("/all", getUsers)
 userRouter.get("/me", protect, getCurrentUser);
+userRouter.put("/edit/:id", protect, editUser); 
 userRouter.put("/edit", protect, editUser);
 userRouter.post("/refresh-token", verifyToken, refreshAccessToken);
 userRouter.get("/check-token", checkAccessToken);

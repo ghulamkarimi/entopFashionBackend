@@ -340,21 +340,31 @@ export const editUser = asynchandler(async (req: Request, res: Response) => {
     return;
   }
 
-  const requestUserId = req.user.userId ?? toIdString(req.user._id);
-  if (!requestUserId) {
-    res.status(401).json({ message: "Ungültiger Auth-Kontext" });
+  // 1. Logik-Anpassung: Nimm ID aus URL (Admin-Fall) ODER aus Token (Self-Edit)
+  const idFromParams = req.params.id;
+  const idFromToken = req.user.userId ?? toIdString(req.user._id);
+  
+  const targetUserId = idFromParams || idFromToken;
+
+  // 2. Sicherheits-Check: Nur Admin oder Besitzer darf bearbeiten
+  const isAdmin = req.user.isAdmin;
+  const isSelf = idFromToken === targetUserId;
+
+  if (!isAdmin && !isSelf) {
+    res.status(403).json({ message: "Keine Berechtigung für dieses Profil" });
     return;
   }
 
-  const { firstName, lastName, email, defaultAddress } =
-    req.body as Partial<IUser>;
+  const { firstName, lastName, email, defaultAddress } = req.body as Partial<IUser>;
 
-  const user = await User.findById(requestUserId);
+  // 3. User finden
+  const user = await User.findById(targetUserId);
   if (!user) {
     res.status(404).json({ message: "Benutzer nicht gefunden" });
     return;
   }
 
+  // 4. Daten aktualisieren
   if (firstName) user.firstName = firstName;
   if (lastName) user.lastName = lastName;
 
@@ -367,12 +377,22 @@ export const editUser = asynchandler(async (req: Request, res: Response) => {
     user.email = email;
   }
 
-  let adresseGeändert = false;
-
+  // 5. Adress-Logik (deine Logik beibehalten)
+  let adresseChanged = false;
   if (defaultAddress) {
-    const { street, houseNumber, city, zip, country, phone } =
-      defaultAddress as NonNullable<IUser["defaultAddress"]>;
-    if (!street || !houseNumber || !city || !zip || !country || !phone) {
+  const hasAnyAddressField =
+    !!defaultAddress.fullName?.trim() ||
+    !!defaultAddress.street?.trim() ||
+    !!defaultAddress.houseNumber?.trim() ||
+    !!defaultAddress.city?.trim() ||
+    !!defaultAddress.zip?.trim() ||
+    !!defaultAddress.country?.trim() ||
+    !!defaultAddress.phone?.trim();
+
+  if (hasAnyAddressField) {
+    const { street, houseNumber, city, zip, country } = defaultAddress;
+
+    if (!street || !houseNumber || !city || !zip || !country) {
       res.status(400).json({ message: "Unvollständige Adressdaten" });
       return;
     }
@@ -381,26 +401,22 @@ export const editUser = asynchandler(async (req: Request, res: Response) => {
     const neueAdresse = JSON.stringify(defaultAddress);
 
     if (alteAdresse !== neueAdresse) {
-      adresseGeändert = true;
+      adresseChanged = true;
     }
 
-    user.defaultAddress = { ...(defaultAddress as any) };
+    user.defaultAddress = { ...defaultAddress };
   }
+}
 
   const updatedUser = await user.save();
 
-  if (adresseGeändert) {
+  // 6. E-Mail Versand (deine Logik)
+  if (adresseChanged) {
     await sendEmail({
       to: user.email,
       subject: "Ihre Adresse wurde geändert",
-      text: `Hallo ${user.firstName},\n\nIhre Standardadresse wurde geändert.\nFalls Sie diese Änderung nicht selbst vorgenommen haben, kontaktieren Sie bitte sofort unser Team.\n\nIhr EntopFashion-Team`,
-      html: `
-        <h2>Hallo ${user.firstName},</h2>
-        <p>Ihre Standardadresse wurde geändert.</p>
-        <p>Falls Sie diese Änderung nicht selbst vorgenommen haben, kontaktieren Sie bitte sofort unser Team.</p>
-        <br/>
-        <strong>Ihr EntopFashion-Team</strong>
-      `,
+      text: `Hallo ${user.firstName}, Ihre Adresse wurde geändert.`,
+      html: `<h2>Hallo ${user.firstName},</h2><p>Ihre Standardadresse wurde geändert.</p>`
     });
   }
 

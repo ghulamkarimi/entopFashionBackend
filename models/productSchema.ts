@@ -14,15 +14,17 @@ const ProductSchema: Schema = new Schema({
   colors: [
     {
       colorId: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: "Color",
+        type: Schema.Types.ObjectId, 
+        ref: "Color", 
         required: true 
       },
       quantity: { 
         type: Number, 
-        required: true, 
-        min: 0, 
         default: 0 
+      },
+      price: { 
+        type: Number, 
+        required: true 
       }
     }
   ],
