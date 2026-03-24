@@ -1,32 +1,32 @@
-import mongoose from "mongoose";
+import mongoose, { Document } from "mongoose";
 import { GenderType } from "../gender";
 
 export interface IUser {
-     _id?: mongoose.Types.ObjectId;
-    firstName: string;
-    lastName: string;
-    email: string;
-    password: string;
+  _id?: mongoose.Types.ObjectId;
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  phone: string;
+  isGuest: boolean;
+  defaultAddress?: {
+    fullName: string;
+    street: string;
+    houseNumber: string;
+    city: string;
+    zip: string;
+    country: string;
     phone: string;
-    isGuest: boolean;
-    defaultAddress?: {
-      fullName: string;
-      street: string;
-      houseNumber: string;
-      city: string;
-      zip: string;
-      country: string;
-      phone: string;
-    };
-    isVerified: boolean;
-    customerNumber: string;
-    isAdmin: boolean;
-    owner: boolean;
-    accessToken?: string;
-    refreshToken?: string;
-  }
+  };
+  isVerified: boolean;
+  customerNumber: string;
+  isAdmin: boolean;
+  owner: boolean;
+  accessToken?: string;
+  refreshToken?: string;
+}
 
- export interface IUserRegisterRequest {
+export interface IUserRegisterRequest {
   firstName: string;
   lastName: string;
   email: string;
@@ -41,34 +41,34 @@ export interface ICategory extends Document {
 }
 
 export interface IColorOption {
-  name: string;
-  hexCode: string;
-  _id: mongoose.Types.ObjectId;
+  colorId: mongoose.Types.ObjectId;
+  quantity: number;
+  price: number;
 }
 
 export interface IProduct extends Document {
-  name: String;
-  description: String;
-  price: Number;
-  image?:string[];
-  category: String | mongoose.Types.ObjectId;
-  stock: Number;
-  colors: (IColorOption | mongoose.Types.ObjectId)[];
-  sizes?: String[];
-  brand?: String; 
-  sku?: String;
-  newPrice?: Number;
-  isFeatured?: Boolean;
-  discount?: Number;
-  deliveryTime?: String;
-  tags?: String[];
-  material?: String;
+  name: string;
+  description: string;
+  price: number;
+  image: string[];
+  category: string | mongoose.Types.ObjectId;
+  stock: number;
+  colors: IColorOption[];
+  sizes?: string[];
+  brand?: string;
+  sku?: string;
+  newPrice?: number;
+  isFeatured?: boolean;
+  discount?: number;
+  deliveryTime?: string;
+  tags?: string[];
+  material?: string;
   gender: GenderType;
-  originCountry?: String;
-  weight: Number;
+  originCountry?: string;
+  weight: number;
   createdAt: Date;
 }
- 
+
 export interface INewsletter extends Document {
   email: string;
   subscribed: boolean;

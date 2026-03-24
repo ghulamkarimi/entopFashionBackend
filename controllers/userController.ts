@@ -3,6 +3,10 @@ import asynchandler from "express-async-handler";
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { sendEmail } from "../utils/sendEmail";
+import { 
+  addressChangedTemplate, 
+  welcomeEmailTemplate 
+} from "../utils/emailTemplates";
 import type {
   IUser,
   IUserRegisterRequest,
@@ -84,7 +88,20 @@ export const userRegister = asynchandler(
       });
 
       await user.save();
-
+      try {
+        await sendEmail({
+          to: user.email,
+          subject: "Willkommen bei ENTOP SHOP",
+          text: `Hallo ${user.firstName}, willkommen bei ENTOP!`,
+          html: welcomeEmailTemplate(user.firstName),
+        });
+      } catch (mailError) {
+        console.error(
+          "Willkommens-E-Mail konnte nicht gesendet werden:",
+          mailError,
+        );
+        // Wir werfen hier keinen Fehler, damit der User trotzdem registriert bleibt
+      }
       res.status(201).json({
         message: "Benutzer wurde erfolgreich erstellt.",
         user: {
@@ -146,8 +163,8 @@ export const loginUser = asynchandler(async (req: Request, res: Response) => {
    * WICHTIG: Bitte ENV-Namen konsistent machen.
    * Empfehlung: ACCESS_TOKEN und REFRESH_TOKEN in .env nutzen.
    */
-  const accessSecret = process.env.ACCESS_TOKEN 
-  const refreshSecret = process.env.REFRESH_TOKEN 
+  const accessSecret = process.env.ACCESS_TOKEN;
+  const refreshSecret = process.env.REFRESH_TOKEN;
 
   if (!accessSecret || !refreshSecret) {
     res.status(500).json({
@@ -340,13 +357,10 @@ export const editUser = asynchandler(async (req: Request, res: Response) => {
     return;
   }
 
-  // 1. Logik-Anpassung: Nimm ID aus URL (Admin-Fall) ODER aus Token (Self-Edit)
   const idFromParams = req.params.id;
   const idFromToken = req.user.userId ?? toIdString(req.user._id);
-  
   const targetUserId = idFromParams || idFromToken;
 
-  // 2. Sicherheits-Check: Nur Admin oder Besitzer darf bearbeiten
   const isAdmin = req.user.isAdmin;
   const isSelf = idFromToken === targetUserId;
 
@@ -355,69 +369,82 @@ export const editUser = asynchandler(async (req: Request, res: Response) => {
     return;
   }
 
-  const { firstName, lastName, email, defaultAddress } = req.body as Partial<IUser>;
+  const { firstName, lastName, email, defaultAddress } =
+    req.body as Partial<IUser>;
 
-  // 3. User finden
   const user = await User.findById(targetUserId);
   if (!user) {
     res.status(404).json({ message: "Benutzer nicht gefunden" });
     return;
   }
 
-  // 4. Daten aktualisieren
-  if (firstName) user.firstName = firstName;
-  if (lastName) user.lastName = lastName;
+  if (firstName !== undefined) user.firstName = firstName;
+  if (lastName !== undefined) user.lastName = lastName;
 
   if (email && email !== user.email) {
-    const emailExists = await User.findOne({ email });
+    const emailExists = await User.findOne({
+      email,
+      _id: { $ne: user._id },
+    });
+
     if (emailExists) {
       res.status(400).json({ message: "E-Mail wird bereits verwendet" });
       return;
     }
+
     user.email = email;
   }
 
-  // 5. Adress-Logik (deine Logik beibehalten)
   let adresseChanged = false;
+
   if (defaultAddress) {
-  const hasAnyAddressField =
-    !!defaultAddress.fullName?.trim() ||
-    !!defaultAddress.street?.trim() ||
-    !!defaultAddress.houseNumber?.trim() ||
-    !!defaultAddress.city?.trim() ||
-    !!defaultAddress.zip?.trim() ||
-    !!defaultAddress.country?.trim() ||
-    !!defaultAddress.phone?.trim();
+    const hasAnyAddressField =
+      !!defaultAddress.fullName?.trim() ||
+      !!defaultAddress.street?.trim() ||
+      !!defaultAddress.houseNumber?.trim() ||
+      !!defaultAddress.city?.trim() ||
+      !!defaultAddress.zip?.trim() ||
+      !!defaultAddress.country?.trim() ||
+      !!defaultAddress.phone?.trim();
 
-  if (hasAnyAddressField) {
-    const { street, houseNumber, city, zip, country } = defaultAddress;
+    if (hasAnyAddressField) {
+      const { street, houseNumber, city, zip, country } = defaultAddress;
 
-    if (!street || !houseNumber || !city || !zip || !country) {
-      res.status(400).json({ message: "Unvollständige Adressdaten" });
-      return;
+      if (!street || !houseNumber || !city || !zip || !country) {
+        res.status(400).json({ message: "Unvollständige Adressdaten" });
+        return;
+      }
+
+      const alteAdresse = JSON.stringify(user.defaultAddress || {});
+      const neueAdresse = JSON.stringify(defaultAddress);
+
+      adresseChanged = alteAdresse !== neueAdresse;
+
+      user.defaultAddress = {
+        fullName: defaultAddress.fullName || "",
+        street: defaultAddress.street || "",
+        houseNumber: defaultAddress.houseNumber || "",
+        city: defaultAddress.city || "",
+        zip: defaultAddress.zip || "",
+        country: defaultAddress.country || "",
+        phone: defaultAddress.phone || "",
+      };
     }
-
-    const alteAdresse = JSON.stringify(user.defaultAddress || {});
-    const neueAdresse = JSON.stringify(defaultAddress);
-
-    if (alteAdresse !== neueAdresse) {
-      adresseChanged = true;
-    }
-
-    user.defaultAddress = { ...defaultAddress };
   }
-}
 
   const updatedUser = await user.save();
 
-  // 6. E-Mail Versand (deine Logik)
   if (adresseChanged) {
-    await sendEmail({
-      to: user.email,
-      subject: "Ihre Adresse wurde geändert",
-      text: `Hallo ${user.firstName}, Ihre Adresse wurde geändert.`,
-      html: `<h2>Hallo ${user.firstName},</h2><p>Ihre Standardadresse wurde geändert.</p>`
-    });
+    try {
+      await sendEmail({
+        to: updatedUser.email,
+        subject: "Ihre Adresse wurde geändert",
+        text: `Hallo ${updatedUser.firstName}, Ihre Adresse wurde geändert.`,
+        html: addressChangedTemplate(updatedUser.firstName),
+      });
+    } catch (mailError) {
+      console.error("Fehler beim Senden der Änderungs-E-Mail:", mailError);
+    }
   }
 
   res.status(200).json({
@@ -477,8 +504,6 @@ export const getCurrentUser = asynchandler(
   },
 );
 
-
-
 export const updateMyAdminProfile = asynchandler(async (req, res) => {
   if (!req.user?.userId) {
     res.status(401);
@@ -486,7 +511,7 @@ export const updateMyAdminProfile = asynchandler(async (req, res) => {
   }
 
   const user = await User.findById(req.user.userId).select(
-    "firstName lastName email phone isAdmin defaultAddress"
+    "firstName lastName email phone isAdmin defaultAddress",
   );
 
   if (!user) {

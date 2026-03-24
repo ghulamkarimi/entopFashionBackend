@@ -186,12 +186,131 @@ export const getProducts = asyncHandler(
 
 // Produkt aktualisieren (PUT /api/products/:id)
 
+// export const updateProduct = asyncHandler(
+//   async (req: Request, res: Response): Promise<void> => {
+//     try {
+//       const { colors, price, newPrice, category, stock, ...otherData } =
+//         req.body;
+//       const uploadedImages = req.body.images || [];
+
+//       if (!mongoose.isValidObjectId(req.params.id)) {
+//         res.status(400).json({ message: "Ungültige Produkt-ID" });
+//         return;
+//       }
+
+//       const product = await Product.findById(req.params.id);
+//       if (!product) {
+//         res.status(404).json({ message: "Produkt nicht gefunden" });
+//         return;
+//       }
+
+     
+
+//       // --- BILDER LÖSCHEN (Logik wie gehabt) ---
+//       if (
+//         uploadedImages.length > 0 &&
+//         product.image &&
+//         Array.isArray(product.image)
+//       ) {
+//         for (const oldImg of product.image) {
+//           const filename = oldImg.split("/").pop();
+//           if (filename) {
+//             const filePath = path.resolve("uploads", filename);
+//             try {
+//               await fs.unlink(filePath);
+//             } catch (err) {
+//               console.warn("Löschen fehlgeschlagen");
+//             }
+//           }
+//         }
+//       }
+
+//       // --- FARBEN & QUANTITY VERARBEITUNG ---
+// if (colors) {
+//   const parsedColors =
+//     typeof colors === "string" ? JSON.parse(colors) : colors;
+
+//   let colorData: { colorId: Types.ObjectId; quantity: number; price: number }[] = [];
+
+//   for (const color of parsedColors) {
+//     let existingColor = null;
+
+//     // Fall 1: colorId wurde direkt geschickt
+//     if (color.colorId && mongoose.isValidObjectId(color.colorId)) {
+//       existingColor = await Color.findById(color.colorId);
+//     }
+
+//     // Fall 2: hexCode wurde geschickt
+//     if (!existingColor && color.hexCode) {
+//       const hexLower = String(color.hexCode).toLowerCase();
+
+//       existingColor = await Color.findOne({ hexCode: hexLower });
+
+//       if (!existingColor) {
+//         existingColor = await new Color({
+//           name: color.name || "Unbekannt",
+//           hexCode: hexLower,
+//         }).save();
+//       }
+//     }
+
+//     if (!existingColor) continue;
+
+//     const finalColorPrice =
+//       color.price !== undefined && color.price !== null
+//         ? Number(color.price)
+//         : Number(price ?? product.price);
+
+//     colorData.push({
+//       colorId: existingColor._id as Types.ObjectId,
+//       quantity: Number(color.quantity) || 0,
+//       price: finalColorPrice,
+//     });
+//   }
+
+//   product.colors = colorData as any;
+//   product.stock = colorData.reduce((acc, curr) => acc + curr.quantity, 0);
+// }
+//       else if (stock !== undefined) {
+//         // Fallback: Falls keine Farben geschickt werden, aber ein Stock-Wert
+//         product.stock = Number(stock);
+//       }
+
+//       // --- RESTLICHE FELDER AKTUALISIEREN ---
+//       Object.assign(product, otherData);
+
+//       if (category) product.category = category;
+//       if (price !== undefined) product.price = Number(price);
+//       if (newPrice !== undefined) product.newPrice = Number(newPrice);
+//       if (uploadedImages.length > 0) product.image = uploadedImages;
+
+//       // --- DISCOUNT BERECHNUNG ---
+//       const pPrice = Number(product.price);
+//       const pNewPrice =
+//         product.newPrice !== undefined ? Number(product.newPrice) : null;
+
+//       if (pPrice > 0 && pNewPrice !== null && pNewPrice < pPrice) {
+//         product.discount = Math.round((1 - pNewPrice / pPrice) * 100);
+//       } else {
+//         product.discount = 0;
+//       }
+
+//       await product.save();
+//       res.status(200).json({ message: "Produkt aktualisiert", product });
+//     } catch (error) {
+//       res.status(500).json({
+//         message: "Fehler beim Aktualisieren",
+//         error: (error as Error).message,
+//       });
+//     }
+//   },
+// );
+
 export const updateProduct = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { colors, price, newPrice, category, stock, ...otherData } =
-        req.body;
-      const uploadedImages = req.body.images || [];
+      const { colors, price, newPrice, category, stock, ...otherData } = req.body;
+      const uploadedImages = Array.isArray(req.body.images) ? req.body.images : [];
 
       if (!mongoose.isValidObjectId(req.params.id)) {
         res.status(400).json({ message: "Ungültige Produkt-ID" });
@@ -204,73 +323,52 @@ export const updateProduct = asyncHandler(
         return;
       }
 
-      // --- BILDER LÖSCHEN (Logik wie gehabt) ---
-      if (
-        uploadedImages.length > 0 &&
-        product.image &&
-        Array.isArray(product.image)
-      ) {
-        for (const oldImg of product.image) {
-          const filename = oldImg.split("/").pop();
-          if (filename) {
-            const filePath = path.resolve("uploads", filename);
-            try {
-              await fs.unlink(filePath);
-            } catch (err) {
-              console.warn("Löschen fehlgeschlagen");
-            }
-          }
-        }
-      }
+      const oldImages = Array.isArray(product.image) ? [...product.image] : [];
 
       // --- FARBEN & QUANTITY VERARBEITUNG ---
-if (colors) {
-  const parsedColors =
-    typeof colors === "string" ? JSON.parse(colors) : colors;
+      if (colors) {
+        const parsedColors =
+          typeof colors === "string" ? JSON.parse(colors) : colors;
 
-  let colorData: { colorId: Types.ObjectId; quantity: number; price: number }[] = [];
+        let colorData: { colorId: Types.ObjectId; quantity: number; price: number }[] = [];
 
-  for (const color of parsedColors) {
-    let existingColor = null;
+        for (const color of parsedColors) {
+          let existingColor = null;
 
-    // Fall 1: colorId wurde direkt geschickt
-    if (color.colorId && mongoose.isValidObjectId(color.colorId)) {
-      existingColor = await Color.findById(color.colorId);
-    }
+          if (color.colorId && mongoose.isValidObjectId(color.colorId)) {
+            existingColor = await Color.findById(color.colorId);
+          }
 
-    // Fall 2: hexCode wurde geschickt
-    if (!existingColor && color.hexCode) {
-      const hexLower = String(color.hexCode).toLowerCase();
+          if (!existingColor && color.hexCode) {
+            const hexLower = String(color.hexCode).toLowerCase();
 
-      existingColor = await Color.findOne({ hexCode: hexLower });
+            existingColor = await Color.findOne({ hexCode: hexLower });
 
-      if (!existingColor) {
-        existingColor = await new Color({
-          name: color.name || "Unbekannt",
-          hexCode: hexLower,
-        }).save();
-      }
-    }
+            if (!existingColor) {
+              existingColor = await new Color({
+                name: color.name || "Unbekannt",
+                hexCode: hexLower,
+              }).save();
+            }
+          }
 
-    if (!existingColor) continue;
+          if (!existingColor) continue;
 
-    const finalColorPrice =
-      color.price !== undefined && color.price !== null
-        ? Number(color.price)
-        : Number(price ?? product.price);
+          const finalColorPrice =
+            color.price !== undefined && color.price !== null
+              ? Number(color.price)
+              : Number(price ?? product.price);
 
-    colorData.push({
-      colorId: existingColor._id as Types.ObjectId,
-      quantity: Number(color.quantity) || 0,
-      price: finalColorPrice,
-    });
-  }
+          colorData.push({
+            colorId: existingColor._id as Types.ObjectId,
+            quantity: Number(color.quantity) || 0,
+            price: finalColorPrice,
+          });
+        }
 
-  product.colors = colorData as any;
-  product.stock = colorData.reduce((acc, curr) => acc + curr.quantity, 0);
-}
-      else if (stock !== undefined) {
-        // Fallback: Falls keine Farben geschickt werden, aber ein Stock-Wert
+        product.colors = colorData as any;
+        product.stock = colorData.reduce((acc, curr) => acc + curr.quantity, 0);
+      } else if (stock !== undefined) {
         product.stock = Number(stock);
       }
 
@@ -280,7 +378,11 @@ if (colors) {
       if (category) product.category = category;
       if (price !== undefined) product.price = Number(price);
       if (newPrice !== undefined) product.newPrice = Number(newPrice);
-      if (uploadedImages.length > 0) product.image = uploadedImages;
+
+      // neue Bildliste setzen
+      if (uploadedImages.length > 0) {
+        product.image = uploadedImages;
+      }
 
       // --- DISCOUNT BERECHNUNG ---
       const pPrice = Number(product.price);
@@ -294,6 +396,27 @@ if (colors) {
       }
 
       await product.save();
+
+      // --- ERST NACH DEM SAVE ALTE, NICHT MEHR VERWENDETE BILDER LÖSCHEN ---
+      if (uploadedImages.length > 0) {
+        const imagesToDelete = oldImages.filter(
+          (oldImg) => !uploadedImages.includes(oldImg)
+        );
+
+        for (const oldImg of imagesToDelete) {
+          const filename = oldImg.split("/").pop();
+          if (!filename) continue;
+
+          const filePath = path.resolve("uploads", filename);
+
+          try {
+            await fs.unlink(filePath);
+          } catch (err) {
+            console.warn(`Löschen fehlgeschlagen: ${filePath}`);
+          }
+        }
+      }
+
       res.status(200).json({ message: "Produkt aktualisiert", product });
     } catch (error) {
       res.status(500).json({
@@ -323,37 +446,40 @@ export const deleteProduct = asyncHandler(
       return;
     }
 
-    // Bilder löschen
-    if (Array.isArray(product.image)) {
-      for (const imgPath of product.image) {
-        if (!imgPath.startsWith("/uploads/")) continue;
+    const oldImages = Array.isArray(product.image) ? [...product.image] : [];
+    const colorIds = product.colors.map(c => c.colorId);
 
-        const absolutePath = path.resolve("uploads", path.basename(imgPath));
+    await product.deleteOne();
 
-        try {
-          await fs.unlink(absolutePath);
-        } catch (err: any) {
-          if (err.code !== "ENOENT") {
-            console.warn("Fehler beim Löschen:", err.message);
-          }
+    // --- Bilder löschen ---
+    for (const imgPath of oldImages) {
+      if (!imgPath.startsWith("/uploads/")) continue;
+
+      const filename = path.basename(imgPath);
+      const absolutePath = path.join(process.cwd(), "uploads", filename);
+
+      try {
+        await fs.unlink(absolutePath);
+      } catch (err: any) {
+        if (err.code !== "ENOENT") {
+          console.warn("Fehler beim Löschen:", err.message);
         }
       }
     }
 
-    // Farben aufräumen
-    for (const colorId of product.colors) {
-      const otherProduct = await Product.findOne({
-        colors: colorId,
-        _id: { $ne: product._id },
-      });
+    // --- Farben bereinigen ---
+    const usedColors = await Product.find({
+      "colors.colorId": { $in: colorIds },
+    }).distinct("colors.colorId");
 
-      if (!otherProduct) {
-        await Color.findByIdAndDelete(colorId);
-      }
+    const colorsToDelete = colorIds.filter(
+      id => !usedColors.some((used: any) => used.equals(id))
+    );
+
+    if (colorsToDelete.length > 0) {
+      await Color.deleteMany({ _id: { $in: colorsToDelete } });
     }
 
-    await product.deleteOne();
-
     res.status(200).json({ message: "Produkt und Bilder gelöscht" });
-  },
+  }
 );

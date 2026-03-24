@@ -1,5 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
+dotenv.config();
 import { dbConnect } from "./config/dbConnect";
 import userRouter from "./routers/userRouter";
 import cors from "cors";
@@ -16,7 +17,7 @@ import path from "path";
 
 dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
-dotenv.config();
+
 
 const startServer = async () => {
   await dbConnect();
