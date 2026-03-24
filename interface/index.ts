@@ -112,3 +112,17 @@ export type AuthUser = {
   owner?: boolean;
   defaultAddress?: IUser["defaultAddress"];
 };
+
+
+
+export interface ICoupon extends Document {
+  code: string;
+  discountType: "percentage" | "fixed";
+  discountValue: number;
+  minOrderAmount: number;
+  expiryDate: Date;
+  isActive: boolean;
+  usageLimit: number | null;
+  usedCount: number;
+}
+

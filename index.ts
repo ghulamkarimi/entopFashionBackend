@@ -12,6 +12,7 @@ import productRouter from "./routers/productRouter";
 import newsletterRouter from "./routers/newsletterRouter";
 import colorRouter from "./routers/colorRouter";
 import adminRouter from "./routers/adminRouter";
+import offerRouter from "./routers/offerRouter";
 import dns from "node:dns";
 import path from "path";
 
@@ -59,6 +60,7 @@ const startServer = async () => {
   app.use("/api/order", orderRouter);
   app.use("/api/genders", genderRouter);
   app.use("/api/products", productRouter);
+  app.use("/api/offers", offerRouter);
   app.use("/api/color", colorRouter);
   app.use("/api/newsletter", newsletterRouter);
 

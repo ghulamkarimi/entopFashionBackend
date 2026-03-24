@@ -1,0 +1,61 @@
+### Apply Bulk Discount (Sale für eine Kategorie starten)
+POST http://localhost:7004/api/offers/bulk-discount
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OGI5YTQ0YzZhODBhODFlYzk0NGZiMzYiLCJmaXJzdE5hbWUiOiJHaHVsYW0iLCJsYXN0TmFtZSI6IkthcmltaSIsImVtYWlsIjoia2FyaW1pYW1pcmhvc3NlaW4xMkBnbWFpbC5jb20iLCJpc0FkbWluIjp0cnVlLCJjdXN0b21lck51bWJlciI6IkdLMjA4MCIsIm93bmVyIjpmYWxzZSwiZGVmYXVsdEFkZHJlc3MiOnsiZnVsbE5hbWUiOiJHaHVsYW0gS2FyaW1pIiwic3RyZWV0IjoiVmFuLVJlY3VtLVN0cmHDn2UiLCJob3VzZU51bWJlciI6IjQ3IiwiY2l0eSI6IkJhZCBLcmV1em5hY2giLCJ6aXAiOiI1NTU0NSIsImNvdW50cnkiOiJEZXV0c2NobGFuZCIsInBob25lIjoiKzQ5IDE3MDc0MDc0MTcifSwiaWF0IjoxNzc0Mzg2MjIzLCJleHAiOjE3NzQzODcxMjN9.CRhOrGcJWzGT7uY8rxPhx5zPo4VxLqqsdE_9kOJVVpo
+
+{
+  "categoryId": "682dac0c1e5d8b655255ca0f",
+  "discountPercentage": 20
+}
+
+### Get all Sale Products
+GET http://localhost:7004/api/offers/sale-products
+Content-Type: application/json
+
+### Create Coupon (Admin)
+POST http://localhost:7004/api/offers/coupons
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OGI5YTQ0YzZhODBhODFlYzk0NGZiMzYiLCJmaXJzdE5hbWUiOiJHaHVsYW0iLCJsYXN0TmFtZSI6IkthcmltaSIsImVtYWlsIjoia2FyaW1pYW1pcmhvc3NlaW4xMkBnbWFpbC5jb20iLCJpc0FkbWluIjp0cnVlLCJjdXN0b21lck51bWJlciI6IkdLMjA4MCIsIm93bmVyIjpmYWxzZSwiZGVmYXVsdEFkZHJlc3MiOnsiZnVsbE5hbWUiOiJHaHVsYW0gS2FyaW1pIiwic3RyZWV0IjoiVmFuLVJlY3VtLVN0cmHDn2UiLCJob3VzZU51bWJlciI6IjQ3IiwiY2l0eSI6IkJhZCBLcmV1em5hY2giLCJ6aXAiOiI1NTU0NSIsImNvdW50cnkiOiJEZXV0c2NobGFuZCIsInBob25lIjoiKzQ5IDE3MDc0MDc0MTcifSwiaWF0IjoxNzc0Mzg2MjIzLCJleHAiOjE3NzQzODcxMjN9.CRhOrGcJWzGT7uY8rxPhx5zPo4VxLqqsdE_9kOJVVpo
+
+{
+  "code": "SALE20",
+  "discountType": "percentage",
+  "discountValue": 20,
+  "expiryDate": "2026-12-31T23:59:59.000Z",
+  "minOrderAmount": 50,
+  "usageLimit": 100
+}
+
+### Get all Coupons (Admin)
+GET http://localhost:7004/api/offers/coupons
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OGI5YTQ0YzZhODBhODFlYzk0NGZiMzYiLCJmaXJzdE5hbWUiOiJHaHVsYW0iLCJsYXN0TmFtZSI6IkthcmltaSIsImVtYWlsIjoia2FyaW1pYW1pcmhvc3NlaW4xMkBnbWFpbC5jb20iLCJpc0FkbWluIjp0cnVlLCJjdXN0b21lck51bWJlciI6IkdLMjA4MCIsIm93bmVyIjpmYWxzZSwiZGVmYXVsdEFkZHJlc3MiOnsiZnVsbE5hbWUiOiJHaHVsYW0gS2FyaW1pIiwic3RyZWV0IjoiVmFuLVJlY3VtLVN0cmHDn2UiLCJob3VzZU51bWJlciI6IjQ3IiwiY2l0eSI6IkJhZCBLcmV1em5hY2giLCJ6aXAiOiI1NTU0NSIsImNvdW50cnkiOiJEZXV0c2NobGFuZCIsInBob25lIjoiKzQ5IDE3MDc0MDc0MTcifSwiaWF0IjoxNzc0Mzg2MjIzLCJleHAiOjE3NzQzODcxMjN9.CRhOrGcJWzGT7uY8rxPhx5zPo4VxLqqsdE_9kOJVVpo
+
+### Update Coupon (Admin) -> echte ID aus GET /coupons einsetzen
+PUT http://localhost:7004/api/offers/coupons/69c2fb7d4e82741f6ccce59e
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OGI5YTQ0YzZhODBhODFlYzk0NGZiMzYiLCJmaXJzdE5hbWUiOiJHaHVsYW0iLCJsYXN0TmFtZSI6IkthcmltaSIsImVtYWlsIjoia2FyaW1pYW1pcmhvc3NlaW4xMkBnbWFpbC5jb20iLCJpc0FkbWluIjp0cnVlLCJjdXN0b21lck51bWJlciI6IkdLMjA4MCIsIm93bmVyIjpmYWxzZSwiZGVmYXVsdEFkZHJlc3MiOnsiZnVsbE5hbWUiOiJHaHVsYW0gS2FyaW1pIiwic3RyZWV0IjoiVmFuLVJlY3VtLVN0cmHDn2UiLCJob3VzZU51bWJlciI6IjQ3IiwiY2l0eSI6IkJhZCBLcmV1em5hY2giLCJ6aXAiOiI1NTU0NSIsImNvdW50cnkiOiJEZXV0c2NobGFuZCIsInBob25lIjoiKzQ5IDE3MDc0MDc0MTcifSwiaWF0IjoxNzc0Mzg2MjIzLCJleHAiOjE3NzQzODcxMjN9.CRhOrGcJWzGT7uY8rxPhx5zPo4VxLqqsdE_9kOJVVpo
+
+{
+  "code": "SALE25",
+  "discountType": "percentage",
+  "discountValue": 25,
+  "expiryDate": "2026-12-31T23:59:59.000Z",
+  "minOrderAmount": 80,
+  "usageLimit": 200,
+  "isActive": true
+}
+
+### Validate updated Coupon
+POST http://localhost:7004/api/offers/coupons/validate
+Content-Type: application/json
+
+{
+  "code": "SALE25",
+  "cartTotal": 120
+}
+
+### Delete Coupon (Admin) -> gleiche echte ID einsetzen
+DELETE http://localhost:7004/api/offers/coupons/69c2fb7d4e82741f6ccce59e
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OGI5YTQ0YzZhODBhODFlYzk0NGZiMzYiLCJmaXJzdE5hbWUiOiJHaHVsYW0iLCJsYXN0TmFtZSI6IkthcmltaSIsImVtYWlsIjoia2FyaW1pYW1pcmhvc3NlaW4xMkBnbWFpbC5jb20iLCJpc0FkbWluIjp0cnVlLCJjdXN0b21lck51bWJlciI6IkdLMjA4MCIsIm93bmVyIjpmYWxzZSwiZGVmYXVsdEFkZHJlc3MiOnsiZnVsbE5hbWUiOiJHaHVsYW0gS2FyaW1pIiwic3RyZWV0IjoiVmFuLVJlY3VtLVN0cmHDn2UiLCJob3VzZU51bWJlciI6IjQ3IiwiY2l0eSI6IkJhZCBLcmV1em5hY2giLCJ6aXAiOiI1NTU0NSIsImNvdW50cnkiOiJEZXV0c2NobGFuZCIsInBob25lIjoiKzQ5IDE3MDc0MDc0MTcifSwiaWF0IjoxNzc0Mzg2MjIzLCJleHAiOjE3NzQzODcxMjN9.CRhOrGcJWzGT7uY8rxPhx5zPo4VxLqqsdE_9kOJVVpo
