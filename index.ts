@@ -51,6 +51,15 @@ const startServer = async () => {
     })
   );
 
+  app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    message: "Server is healthy"
+  });
+});
+
   // WICHTIG: uploads-Ordner öffentlich machen
   app.use("/uploads", express.static(path.resolve("uploads")));
 
