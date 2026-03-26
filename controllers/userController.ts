@@ -251,10 +251,13 @@ export const userLogout = asynchandler(async (req: Request, res: Response) => {
   }
 
   const user = await User.findOne({ refreshToken });
-  if (!user) {
-    res.status(400).json({ message: "User not found" });
-    return;
-  }
+ if (!user) {
+  res.clearCookie("accessToken");
+  res.clearCookie("refreshToken");
+
+  res.status(200).json({ message: "Already logged out" });
+  return;
+}
 
   user.refreshToken = undefined;
   await user.save();
