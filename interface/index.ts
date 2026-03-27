@@ -110,6 +110,7 @@ export type AuthUser = {
   isAdmin?: boolean;
   customerNumber?: string;
   owner?: boolean;
+  exp?:number;
   defaultAddress?: IUser["defaultAddress"];
 };
 

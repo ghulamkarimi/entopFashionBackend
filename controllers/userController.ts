@@ -473,38 +473,31 @@ export const getUsers = asynchandler(async (_req: Request, res: Response) => {
 
 export const getCurrentUser = asynchandler(
   async (req: Request, res: Response) => {
-    if (!req.user) {
+    if (!req.user?.userId) {
       res.status(401).json({ message: "Nicht eingeloggt" });
       return;
     }
 
-    const requestUserId = req.user.userId ?? toIdString(req.user._id);
-    if (!requestUserId) {
-      res.status(401).json({ message: "Ungültiger Auth-Kontext" });
-      return;
-    }
-
-    const user = await User.findById(requestUserId).select(
-      "-password -refreshToken",
+    const user = await User.findById(req.user.userId).select(
+      "firstName lastName email isAdmin"
     );
+
     if (!user) {
       res.status(404).json({ message: "Benutzer nicht gefunden" });
       return;
     }
 
-    const accessToken = req.cookies?.accessToken as string | undefined;
-    const decoded = accessToken
-      ? (jwt.decode(accessToken) as { exp?: number } | null)
-      : null;
-
     res.status(200).json({
       user: {
-        ...user.toObject(),
-        exp: decoded?.exp ?? null,
         userId: toIdString(user._id),
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        exp: req.user.exp ?? null,
       },
     });
-  },
+  }
 );
 
 export const updateMyAdminProfile = asynchandler(async (req, res) => {
