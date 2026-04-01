@@ -479,8 +479,8 @@ export const getCurrentUser = asynchandler(
     }
 
     const user = await User.findById(req.user.userId).select(
-      "firstName lastName email isAdmin"
-    );
+      "firstName lastName email isAdmin defaultAddress"
+    ).lean();
 
     if (!user) {
       res.status(404).json({ message: "Benutzer nicht gefunden" });
@@ -494,6 +494,7 @@ export const getCurrentUser = asynchandler(
         lastName: user.lastName,
         email: user.email,
         isAdmin: user.isAdmin,
+        defaultAddress: user.defaultAddress,
         exp: req.user.exp ?? null,
       },
     });
