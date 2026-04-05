@@ -1,6 +1,6 @@
 import asynchandler from "express-async-handler";
 import { Request, Response } from "express";
-import Category from "../models/CategorySchema";
+import Category from "../models/categorySchema";
 
 
 export const createCategory = asynchandler(async (req: Request, res: Response): Promise<void> => {

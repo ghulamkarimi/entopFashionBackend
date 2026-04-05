@@ -1,0 +1,38 @@
+### Newsletter abonnieren
+POST http://localhost:7004/api/newsletter/subscribe
+Content-Type: application/json
+
+{
+  "email": "karimiamirhossein12@gmail.com"
+}
+
+### Newsletter abmelden
+POST http://localhost:7004/api/newsletter/unsubscribe
+Content-Type: application/json
+
+{
+  "email": "karimiamirhossein12@gmail.com"
+}
+
+### Alle Newsletter-Abonnenten holen
+GET http://localhost:7004/api/newsletter
+
+### Newsletter an alle senden
+POST http://localhost:7004/api/newsletter/send
+Content-Type: application/json
+
+{
+  "subject": "Neue Angebote",
+  "products": [
+    {
+      "title": "Sneaker Premium",
+      "image": "http://localhost:7004/uploads/145d6b5b-fc69-475a-ba68-72cf5fc96877.webp",
+      "description": "Sehr bequeme und moderne Sneaker."
+    },
+    {
+      "title": "Winterjacke",
+      "image": "http://localhost:7004/uploads/145d6b5b-fc69-475a-ba68-72cf5fc96877.webp",
+      "description": "Warme Jacke für kalte Tage."
+    }
+  ]
+}

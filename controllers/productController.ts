@@ -2,7 +2,7 @@ import asyncHandler from "express-async-handler";
 import { Request, Response } from "express";
 import mongoose, { Types } from "mongoose";
 import Product from "../models/productSchema";
-import Category from "../models/CategorySchema";
+import Category from "../models/categorySchema";
 import fs from "fs/promises";
 import path from "path";
 import Color from "../models/colorSchema";
