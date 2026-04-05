@@ -44,7 +44,7 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
   });
 });
 
-// 📦 Eigene Bestellungen für eingeloggte Benutzer
+//  Eigene Bestellungen für eingeloggte Benutzer
 export const getMyOrders = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
     res.status(401).json({ message: "Nicht autorisiert" });

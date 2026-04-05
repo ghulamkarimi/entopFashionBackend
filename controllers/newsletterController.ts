@@ -3,6 +3,10 @@ import NewsletterSubscriber from "../models/newsletterSubscriberSchema";
 import NewsletterCampaign from "../models/newsletterCampaignSchema";
 import { sendEmail } from "../utils/sendEmail";
 import { getBaseTemplate } from "../utils/emailTemplates";
+import sharp from "sharp";
+import path from "path";
+import fs from "fs/promises";
+import crypto from "crypto";
 
 type NewsletterProduct = {
   title: string;
@@ -23,7 +27,12 @@ const escapeHtml = (value: string = ""): string => {
 
 const getProductImage = (product: NewsletterProduct): string => {
   if (product.image && product.image.trim() !== "") return product.image;
-  if (Array.isArray(product.images) && product.images.length > 0 && typeof product.images[0] === "string" && product.images[0].trim() !== "") {
+  if (
+    Array.isArray(product.images) &&
+    product.images.length > 0 &&
+    typeof product.images[0] === "string" &&
+    product.images[0].trim() !== ""
+  ) {
     return product.images[0];
   }
   return "";
@@ -31,22 +40,30 @@ const getProductImage = (product: NewsletterProduct): string => {
 
 // --- CONTROLLER ---
 
-// Bild-Upload (unverändert, nur Typen-Sicherheit verbessert)
-export const uploadNewsletterImage = async (req: Request, res: Response): Promise<void> => {
+export const uploadNewsletterImage = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
-    if (!req.file) {
-      res.status(400).json({ message: "Kein Bild hochgeladen." });
+    console.log("uploadNewsletterImage erreicht");
+    console.log("req.body.image:", req.body.image);
+
+    if (!req.body.image) {
+      res.status(400).json({ message: "Kein Newsletter-Bild verarbeitet." });
       return;
     }
-    const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 7004}`;
-    const imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
 
-    res.status(200).json({ message: "Bild erfolgreich hochgeladen.", imageUrl });
+    res.status(200).json({
+      message: "Bild erfolgreich hochgeladen.",
+      imageUrl: req.body.image,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Fehler beim Hochladen des Bildes.", error });
+    console.error("Fehler beim Hochladen des Bildes:", error);
+    res.status(500).json({
+      message: "Fehler beim Hochladen des Bildes.",
+    });
   }
 };
-
 // POST /api/newsletter/subscribe
 export const subscribe = async (req: Request, res: Response): Promise<void> => {
   const email = req.body?.email?.trim()?.toLowerCase();

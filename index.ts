@@ -25,6 +25,7 @@ const startServer = async () => {
 
   const app = express();
 
+
   app.use(express.json());
   app.use(cookieParser());
 
@@ -60,8 +61,8 @@ const startServer = async () => {
   });
 });
 
-  // WICHTIG: uploads-Ordner öffentlich machen
-  app.use("/uploads", express.static(path.resolve("uploads")));
+
+app.use("/uploads", express.static(path.resolve("uploads")));
 
   app.use("/api/user", userRouter);
   app.use("/api/admin", adminRouter);

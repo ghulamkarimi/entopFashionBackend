@@ -4,53 +4,55 @@ import Category from "../models/categorySchema";
 
 
 export const createCategory = asynchandler(async (req: Request, res: Response): Promise<void> => {
-    try {
-        // 1. Prüfen, ob user Admin ist
-        if (!req.user?.isAdmin) {
-            res.status(403).json({ message: "Nur Admins dürfen Kategorien erstellen" });
-            return;
-        }
+  try {
+    console.log("BODY:", req.body);
+    console.log("USER:", req.user);
 
-        // 2. Daten aus dem Request holen
-        const { name, gender } = req.body;
+    const { name, gender } = req.body;
 
-        // 3. Neue Kategorie anlegen
-        const newCategory = new Category({
-            name,
-            gender
-            // Optional: createdBy: req.user.userId
-        });
+    const newCategory = new Category({
+      name,
+      gender,
+    });
 
-        await newCategory.save();
+    await newCategory.save();
 
-        res.status(201).json({ message: "Kategorie erstellt", category: newCategory });
-    } catch (error) {
-        res.status(500).json({ message: "Fehler beim Erstellen der Kategorie", error });
-    }
+    res.status(201).json({ message: "Kategorie erstellt", category: newCategory });
+  } catch (error) {
+    console.error("CREATE CATEGORY ERROR:", error);
+    res.status(500).json({
+      message: "Fehler beim Erstellen der Kategorie",
+      error: error instanceof Error ? error.message : error,
+    });
+  }
 });
 
 
 export const deleteCategory = asynchandler(async (req: Request, res: Response): Promise<void> => {
-    try {
-      if (!req.user?.isAdmin) {
-        res.status(403).json({ message: "Nur Admins dürfen Kategorien löschen" });
-        return;
-      }
-  
-      const category = await Category.findById(req.params.id);
-  
-      if (!category) {
-        res.status(404).json({ message: "Kategorie nicht gefunden" });
-        return;
-      }
-  
-      await category.deleteOne();
-  
-      res.status(200).json({ message: "Kategorie gelöscht" });
-    } catch (error) {
-      res.status(500).json({ message: "Fehler beim Löschen der Kategorie", error });
+  try {
+    console.log("DELETE CATEGORY PARAMS:", req.params);
+    console.log("DELETE CATEGORY USER:", req.user);
+
+    if (!req.user?.isAdmin) {
+      res.status(403).json({ message: "Nur Admins dürfen Kategorien löschen" });
+      return;
     }
-  });
+
+    const category = await Category.findById(req.params.id);
+
+    if (!category) {
+      res.status(404).json({ message: "Kategorie nicht gefunden" });
+      return;
+    }
+
+    await category.deleteOne();
+
+    res.status(200).json({ message: "Kategorie gelöscht" });
+  } catch (error) {
+    console.error("DELETE CATEGORY ERROR:", error);
+    res.status(500).json({ message: "Fehler beim Löschen der Kategorie", error });
+  }
+});
 
   
   export const updateCategory = asynchandler(async (req: Request, res: Response): Promise<void> => {

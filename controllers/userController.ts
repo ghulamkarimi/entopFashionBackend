@@ -10,7 +10,6 @@ import {
 import type {
   IUser,
   IUserRegisterRequest,
-  SafeUser,
   AuthUser,
   SafeUserBasic,
 } from "../interface";
@@ -199,15 +198,19 @@ export const loginUser = asynchandler(async (req: Request, res: Response) => {
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
+    // secure: true,
     maxAge: 15 * 60 * 1000,
     sameSite: "lax",
+    // sameSite: "none",
   });
 
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
+    // secure: true,
     maxAge: 24 * 60 * 60 * 1000,
     sameSite: "lax",
+    // sameSite: "none",
   });
 
   const decodedAccessToken = jwt.decode(accessToken) as { exp?: number } | null;

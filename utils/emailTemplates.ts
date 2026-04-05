@@ -38,7 +38,7 @@ export const getBaseTemplate = (title: string, content: string) => `
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                   <tr>
                     <td align="center" style="padding: 20px 0;">
-                      <a href="http://localhost:3000/" target="_blank" style="background-color: #111111; color: #ffffff; padding: 15px 35px; text-decoration: none; font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; border-radius: 2px; display: inline-block; letter-spacing: 1px;">
+                      <a href="${process.env.SHOP_URL || "#"}" target="_blank" style="background-color: #111111; color: #ffffff; padding: 15px 35px; text-decoration: none; font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; border-radius: 2px; display: inline-block; letter-spacing: 1px;">
                         ZUM SHOP
                       </a>
                     </td>

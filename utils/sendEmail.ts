@@ -3,7 +3,7 @@ import nodemailer from "nodemailer";
 interface EmailOptions {
   to: string;
   subject: string;
-  text: string;
+  text?: string;
   html?: string;
 }
 
@@ -33,13 +33,13 @@ export const sendEmail = async ({
       from: `"Entop Shop" <${email}>`,
       to,
       subject,
-      text,
+      text: text || "Bitte aktivieren Sie HTML in Ihrem E-Mail-Programm.",
       html,
     });
 
-    console.log("✅ E-Mail erfolgreich gesendet an", to);
+    console.log("E-Mail erfolgreich gesendet an", to);
   } catch (error) {
-    console.error("❌ Fehler beim Senden der E-Mail:", error);
+    console.error("Fehler beim Senden der E-Mail:", error);
     throw error;
   }
 };

@@ -1,6 +1,6 @@
 import mongoose, { Document } from "mongoose";
 import { GenderType } from "../gender";
-import { subscribe } from '../controllers/newsletterController';
+
 
 export interface IUser {
   _id?: mongoose.Types.ObjectId;

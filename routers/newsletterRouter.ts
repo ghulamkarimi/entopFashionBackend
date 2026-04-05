@@ -7,6 +7,7 @@ import {
   uploadNewsletterImage,
 } from "../controllers/newsletterController";
 import upload from "../middleware/upload";
+import { resizeNewsletterImage } from "../middleware/resizeNewsletterImage";
 
 const newsletterRouter = express.Router();
 
@@ -17,7 +18,8 @@ newsletterRouter.post("/send", sendNewsletter as RequestHandler);
 newsletterRouter.post(
   "/upload-image",
   upload.single("image"),
-  uploadNewsletterImage as RequestHandler,
+  resizeNewsletterImage as RequestHandler,
+  uploadNewsletterImage as RequestHandler
 );
 
 export default newsletterRouter;
