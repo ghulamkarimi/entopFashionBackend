@@ -29,6 +29,7 @@ const couponSchema = new mongoose.Schema(
     expiryDate: {
       type: Date,
       required: true,
+      index: { expires: 0 },
     },
     isActive: {
       type: Boolean,
@@ -55,8 +56,7 @@ couponSchema.pre("save", function (next) {
   }
 
   if (this.expiryDate && this.expiryDate.getTime() < Date.now()) {
-    // optional: nur bei Erstellung verbieten
-    // return next(new Error("Ablaufdatum darf nicht in der Vergangenheit liegen"));
+    return next(new Error("Ablaufdatum darf nicht in der Vergangenheit liegen"));
   }
 
   next();
