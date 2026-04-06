@@ -48,6 +48,28 @@ export interface IColorOption {
   price: number;
 }
 
+export interface IProductVariant {
+  colorId: string | mongoose.Types.ObjectId | IColorRef;
+  size: string;
+  quantity: number;
+  price: number;
+  sold: number;
+}
+
+export interface IColorRef {
+  _id: string | mongoose.Types.ObjectId;
+  name?: string;
+  hexCode?: string;
+}
+
+export interface IProductVariant {
+  colorId: string | mongoose.Types.ObjectId | IColorRef;
+  size: string;
+  quantity: number;
+  price: number;
+  sold: number;
+}
+
 export interface IProduct extends Document {
   name: string;
   description: string;
@@ -55,8 +77,7 @@ export interface IProduct extends Document {
   image: string[];
   category: string | mongoose.Types.ObjectId;
   stock: number;
-  colors: IColorOption[];
-  sizes?: string[];
+  variants: IProductVariant[];
   brand?: string;
   sku?: string;
   newPrice?: number;

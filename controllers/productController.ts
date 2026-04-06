@@ -6,24 +6,120 @@ import Category from "../models/categorySchema";
 import fs from "fs/promises";
 import path from "path";
 import Color from "../models/colorSchema";
-
+import { IProduct } from "../interface";
 
 function generateSKU(name: string): string {
   const cleanName = name
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "")
     .substring(0, 7);
+
   const now = new Date();
-  // Datum als YYMMDD
-  const year = now.getFullYear().toString().slice(-2); // letzte 2 Stellen vom Jahr
-  const month = (now.getMonth() + 1).toString().padStart(2, "0"); // Monat 01-12
-  const day = now.getDate().toString().padStart(2, "0"); // Tag 01-31
+  const year = now.getFullYear().toString().slice(-2);
+  const month = (now.getMonth() + 1).toString().padStart(2, "0");
+  const day = now.getDate().toString().padStart(2, "0");
   const dateString = `${year}${month}${day}`;
   const rand = Math.floor(Math.random() * 90000 + 10000);
+
   return `${cleanName}-${dateString}-${rand}`;
 }
 
-// Produkt erstellen (POST /api/products)
+type VariantInput = {
+  colorId?: string;
+  hexCode?: string;
+  name?: string;
+  size?: string;
+  quantity?: number | string;
+  price?: number | string;
+  sold?: number | string;
+};
+
+type VariantData = {
+  colorId: Types.ObjectId;
+  size: string;
+  quantity: number;
+  price: number;
+  sold: number;
+};
+
+async function buildVariantData(
+  variants: VariantInput[],
+  fallbackPrice: number,
+): Promise<VariantData[]> {
+  const variantData: VariantData[] = [];
+
+  for (const variant of variants) {
+    let existingColor = null;
+
+    if (variant.colorId && mongoose.isValidObjectId(variant.colorId)) {
+      existingColor = await Color.findById(variant.colorId);
+    }
+
+    if (!existingColor && variant.hexCode) {
+      const hexLower = String(variant.hexCode).toLowerCase().trim();
+
+      existingColor = await Color.findOne({ hexCode: hexLower });
+
+      if (!existingColor) {
+        existingColor = await new Color({
+          name: variant.name?.trim() || "Unbekannt",
+          hexCode: hexLower,
+        }).save();
+      }
+    }
+
+    if (!existingColor) {
+      throw new Error("Farbe konnte nicht gefunden oder erstellt werden");
+    }
+
+    const size = String(variant.size || "").trim() || "Standard";
+
+    const finalVariantPrice =
+      variant.price !== undefined &&
+        variant.price !== null &&
+        variant.price !== ""
+        ? Number(variant.price)
+        : Number(fallbackPrice);
+
+    if (Number.isNaN(finalVariantPrice) || finalVariantPrice < 0) {
+      throw new Error("Variantenpreis ist ungültig");
+    }
+
+    const quantity = Number(variant.quantity);
+    if (Number.isNaN(quantity) || quantity < 0) {
+      throw new Error("Variantenbestand ist ungültig");
+    }
+
+    const sold = Number(variant.sold ?? 0);
+    if (Number.isNaN(sold) || sold < 0) {
+      throw new Error("Verkaufsmenge ist ungültig");
+    }
+
+    variantData.push({
+      colorId: existingColor._id as Types.ObjectId,
+      size,
+      quantity,
+      price: finalVariantPrice,
+      sold,
+    });
+  }
+
+  return variantData;
+}
+
+function validateUniqueVariants(variants: VariantData[]) {
+  const seen = new Set<string>();
+
+  for (const variant of variants) {
+    const key = `${String(variant.colorId)}-${variant.size.toLowerCase().trim()}`;
+    if (seen.has(key)) {
+      throw new Error(`Doppelte Variante gefunden: ${variant.size}`);
+    }
+    seen.add(key);
+  }
+}
+
+// Produkt erstellen
 export const createProduct = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     try {
@@ -34,15 +130,12 @@ export const createProduct = asyncHandler(
         return;
       }
 
-      // Alle möglichen Felder holen
       const {
         name,
         description,
         price,
         category,
-        stock,
-        sizes,
-        colors,
+        variants,
         weight,
         brand,
         sku,
@@ -55,11 +148,14 @@ export const createProduct = asyncHandler(
         originCountry,
       } = req.body;
 
-      const images = req.body.images || [];
+      const uploadedFiles = Array.isArray(req.files) ? req.files : [];
+      const images = uploadedFiles.map(
+        (file: Express.Multer.File) => `/uploads/${file.filename}`,
+      );
 
-      if (price < 0 || weight < 0 || stock < 0) {
+      if (Number(price) < 0 || Number(weight) < 0) {
         res.status(400).json({
-          message: "Preis, Gewicht und Lagerbestand dürfen nicht negativ sein",
+          message: "Preis und Gewicht dürfen nicht negativ sein",
         });
         return;
       }
@@ -79,75 +175,60 @@ export const createProduct = asyncHandler(
       if (
         price !== undefined &&
         newPrice !== undefined &&
-        price > 0 &&
-        newPrice < price
+        Number(price) > 0 &&
+        Number(newPrice) < Number(price)
       ) {
-        discountPercent = Math.round((1 - newPrice / price) * 100);
+        discountPercent = Math.round(
+          (1 - Number(newPrice) / Number(price)) * 100,
+        );
       }
 
-      // Farben verarbeiten und verknüpfen
-      let colorData: { colorId: Types.ObjectId; quantity: number; price:number }[] = [];
-      let parsedColors: any[] = [];
+      const parsedVariants: VariantInput[] =
+        variants && typeof variants === "string"
+          ? JSON.parse(variants)
+          : Array.isArray(variants)
+            ? variants
+            : [];
 
-      if (colors) {
-        parsedColors = typeof colors === "string" ? JSON.parse(colors) : colors;
-      }
+      const variantData = await buildVariantData(parsedVariants, Number(price));
+      validateUniqueVariants(variantData);
 
-      if (parsedColors.length > 0) {
-        for (const color of parsedColors) {
-          if (!color.hexCode) continue;
-
-          const hexLower = color.hexCode.toLowerCase();
-          let existingColor = await Color.findOne({ hexCode: hexLower });
-
-          if (!existingColor) {
-            existingColor = await new Color({
-              name: color.name || "Unbekannt",
-              hexCode: hexLower,
-            }).save();
-          }
-
-          const finalColorPrice = (color.price !== undefined && color.price !== null) 
-    ? Number(color.price) 
-    : Number(price);
-
-          colorData.push({
-            colorId: existingColor._id as Types.ObjectId,
-            quantity: Number(color.quantity) || 0, // Hier ziehen wir die Menge pro Farbe
-            price: finalColorPrice, // Hier ziehen wir den Preis pro Farbe oder verwenden den Standardpreis
-          });
-        }
-      }
-
-      // Gesamtbestand automatisch berechnen
-      const totalStock = colorData.reduce(
+      const totalStock = variantData.reduce(
         (acc, curr) => acc + curr.quantity,
         0,
       );
-
+           const parsedTags =
+  tags && typeof tags === "string"
+    ? JSON.parse(tags)
+    : Array.isArray(tags)
+      ? tags
+      : [];
+      const parsedIsFeatured =
+        isFeatured === true || String(isFeatured).toLowerCase() === "true";
       let productSKU = sku;
       if (!productSKU) {
         productSKU = generateSKU(name);
       }
-
-      // Produkt speichern
+   
       const newProduct = new Product({
         name,
         description,
-        price,
+        price: Number(price),
         image: images,
         category,
         stock: totalStock,
-        sizes,
-        colors: colorData,
-        weight,
-        discount: discountPercent,
+        variants: variantData,
+        weight: Number(weight),
+        discount: discountPercent ?? 0,
         brand,
         sku: productSKU,
-        newPrice,
-        isFeatured,
+        newPrice:
+          newPrice !== undefined && newPrice !== null && newPrice !== ""
+            ? Number(newPrice)
+            : undefined,
+        isFeatured: parsedIsFeatured,
         deliveryTime,
-        tags,
+        tags: parsedTags,
         gender,
         material,
         originCountry,
@@ -155,24 +236,39 @@ export const createProduct = asyncHandler(
 
       await newProduct.save();
 
-      res
-        .status(201)
-        .json({ message: "Produkt erstellt", product: newProduct });
+      res.status(201).json({
+        message: "Produkt erstellt",
+        product: newProduct,
+      });
     } catch (error) {
-      res.status(500).json({
-        message: "Fehler beim Erstellen des Produkts",
-        error: (error as Error).message,
+      const message = (error as Error).message;
+
+      const isValidationError =
+        message.includes("Variante") ||
+        message.includes("Größe") ||
+        message.includes("Farbe") ||
+        message.includes("Preis") ||
+        message.includes("Bestand") ||
+        message.includes("Verkaufsmenge") ||
+        message.includes("Doppelte");
+
+      res.status(isValidationError ? 400 : 500).json({
+        message: isValidationError
+          ? message
+          : "Fehler beim Erstellen des Produkts",
+        error: message,
       });
     }
   },
 );
-// Alle Produkte abrufen (GET /api/products)
+
+// Alle Produkte abrufen
 export const getProducts = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     try {
       const products = await Product.find({})
         .populate("category", "name gender")
-        .populate("colors", "name hexCode"); // Farben auch anzeigen
+        .populate("variants.colorId", "name hexCode");
 
       res.status(200).json(products);
     } catch (error) {
@@ -184,21 +280,26 @@ export const getProducts = asyncHandler(
   },
 );
 
-
-
-
+// Produkt aktualisieren
 export const updateProduct = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { colors, price, newPrice, category, stock, ...otherData } = req.body;
-      const uploadedImages = Array.isArray(req.body.images) ? req.body.images : [];
+      const { variants, price, newPrice, category, stock, ...otherData } =
+        req.body;
+
+      const uploadedFiles = Array.isArray(req.files) ? req.files : [];
+      const images = uploadedFiles.map(
+        (file: Express.Multer.File) => `/uploads/${file.filename}`,
+      );
 
       if (!mongoose.isValidObjectId(req.params.id)) {
         res.status(400).json({ message: "Ungültige Produkt-ID" });
         return;
       }
 
-      const product = await Product.findById(req.params.id);
+      const product = (await Product.findById(
+        req.params.id,
+      )) as IProduct | null;
       if (!product) {
         res.status(404).json({ message: "Produkt nicht gefunden" });
         return;
@@ -206,66 +307,36 @@ export const updateProduct = asyncHandler(
 
       const oldImages = Array.isArray(product.image) ? [...product.image] : [];
 
-      // --- FARBEN & QUANTITY VERARBEITUNG ---
-      if (colors) {
-        const parsedColors =
-          typeof colors === "string" ? JSON.parse(colors) : colors;
+      if (variants) {
+        const parsedVariants: VariantInput[] =
+          typeof variants === "string" ? JSON.parse(variants) : variants;
 
-        let colorData: { colorId: Types.ObjectId; quantity: number; price: number }[] = [];
+        const variantData = await buildVariantData(
+          parsedVariants,
+          Number(price ?? product.price),
+        );
+        validateUniqueVariants(variantData);
 
-        for (const color of parsedColors) {
-          let existingColor = null;
-
-          if (color.colorId && mongoose.isValidObjectId(color.colorId)) {
-            existingColor = await Color.findById(color.colorId);
-          }
-
-          if (!existingColor && color.hexCode) {
-            const hexLower = String(color.hexCode).toLowerCase();
-
-            existingColor = await Color.findOne({ hexCode: hexLower });
-
-            if (!existingColor) {
-              existingColor = await new Color({
-                name: color.name || "Unbekannt",
-                hexCode: hexLower,
-              }).save();
-            }
-          }
-
-          if (!existingColor) continue;
-
-          const finalColorPrice =
-            color.price !== undefined && color.price !== null
-              ? Number(color.price)
-              : Number(price ?? product.price);
-
-          colorData.push({
-            colorId: existingColor._id as Types.ObjectId,
-            quantity: Number(color.quantity) || 0,
-            price: finalColorPrice,
-          });
-        }
-
-        product.colors = colorData as any;
-        product.stock = colorData.reduce((acc, curr) => acc + curr.quantity, 0);
-      } else if (stock !== undefined) {
-        product.stock = Number(stock);
+        product.variants = variantData;
+        product.stock = variantData.reduce(
+          (acc, curr) => acc + curr.quantity,
+          0,
+        );
       }
 
-      // --- RESTLICHE FELDER AKTUALISIEREN ---
       Object.assign(product, otherData);
 
       if (category) product.category = category;
       if (price !== undefined) product.price = Number(price);
-      if (newPrice !== undefined) product.newPrice = Number(newPrice);
-
-      // neue Bildliste setzen
-      if (uploadedImages.length > 0) {
-        product.image = uploadedImages;
+      if (newPrice !== undefined) {
+        product.newPrice =
+          newPrice !== null && newPrice !== "" ? Number(newPrice) : undefined;
       }
 
-      // --- DISCOUNT BERECHNUNG ---
+      if (images.length > 0) {
+        product.image = images;
+      }
+
       const pPrice = Number(product.price);
       const pNewPrice =
         product.newPrice !== undefined ? Number(product.newPrice) : null;
@@ -278,10 +349,9 @@ export const updateProduct = asyncHandler(
 
       await product.save();
 
-      // --- ERST NACH DEM SAVE ALTE, NICHT MEHR VERWENDETE BILDER LÖSCHEN ---
-      if (uploadedImages.length > 0) {
+      if (images.length > 0) {
         const imagesToDelete = oldImages.filter(
-          (oldImg) => !uploadedImages.includes(oldImg)
+          (oldImg) => !images.includes(oldImg),
         );
 
         for (const oldImg of imagesToDelete) {
@@ -298,7 +368,10 @@ export const updateProduct = asyncHandler(
         }
       }
 
-      res.status(200).json({ message: "Produkt aktualisiert", product });
+      res.status(200).json({
+        message: "Produkt aktualisiert",
+        product,
+      });
     } catch (error) {
       res.status(500).json({
         message: "Fehler beim Aktualisieren",
@@ -307,8 +380,8 @@ export const updateProduct = asyncHandler(
     }
   },
 );
-// Produkt löschen (DELETE /api/products/:id)
 
+// Produkt löschen
 export const deleteProduct = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     if (!mongoose.isValidObjectId(req.params.id)) {
@@ -321,18 +394,17 @@ export const deleteProduct = asyncHandler(
       return;
     }
 
-    const product = await Product.findById(req.params.id);
+    const product = (await Product.findById(req.params.id)) as IProduct | null;
     if (!product) {
       res.status(404).json({ message: "Produkt nicht gefunden" });
       return;
     }
 
     const oldImages = Array.isArray(product.image) ? [...product.image] : [];
-    const colorIds = product.colors.map(c => c.colorId);
+    const colorIds = (product.variants || []).map((v) => v.colorId);
 
     await product.deleteOne();
 
-    // --- Bilder löschen ---
     for (const imgPath of oldImages) {
       if (!imgPath.startsWith("/uploads/")) continue;
 
@@ -348,13 +420,12 @@ export const deleteProduct = asyncHandler(
       }
     }
 
-    // --- Farben bereinigen ---
     const usedColors = await Product.find({
-      "colors.colorId": { $in: colorIds },
-    }).distinct("colors.colorId");
+      "variants.colorId": { $in: colorIds },
+    }).distinct("variants.colorId");
 
     const colorsToDelete = colorIds.filter(
-      id => !usedColors.some((used: any) => used.equals(id))
+      (id: any) => !usedColors.some((used: any) => used.equals(id)),
     );
 
     if (colorsToDelete.length > 0) {
@@ -362,5 +433,5 @@ export const deleteProduct = asyncHandler(
     }
 
     res.status(200).json({ message: "Produkt und Bilder gelöscht" });
-  }
+  },
 );
